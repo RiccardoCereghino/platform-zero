@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: hcloud-volumes # Default CSI class in this module
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-lb
+  annotations:
+    load-balancer.hetzner.cloud/location: nbg1 # Forces LB to the same region as your nodes
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: test-app
