@@ -15,7 +15,7 @@ set -euo pipefail
 
 UPSTREAM_REPO="https://github.com/hcloud-k8s/terraform-hcloud-kubernetes.git"
 UPSTREAM_DIR="/tmp/hcloud-k8s-upstream"
-INFRA_DIR="$(cd "$(dirname "$0")/../infrastracture" && pwd)"
+INFRA_DIR="$(cd "$(dirname "$0")/../infrastructure" && pwd)"
 PATCH_DIR="$(cd "$(dirname "$0")/.." && pwd)/patches"
 
 # Files we added locally that don't exist upstream
@@ -49,7 +49,7 @@ show_diff() {
   fetch_upstream "$ref"
 
   echo ""
-  echo "📊 Comparing local infrastracture/ against upstream ($ref)..."
+  echo "📊 Comparing local infrastructure/ against upstream ($ref)..."
   echo "─────────────────────────────────────────────────────────"
 
   local excludes
