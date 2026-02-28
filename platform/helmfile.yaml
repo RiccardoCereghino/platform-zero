@@ -1,0 +1,26 @@
+---
+repositories:
+  - name: external-dns
+    url: https://kubernetes-sigs.github.io/external-dns/
+
+releases:
+  - name: external-dns
+    namespace: external-dns
+    chart: external-dns/external-dns
+    version: 1.15.0
+    values:
+      - provider:
+          name: cloudflare
+        env:
+          - name: CF_API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cloudflare-api-token-secret
+                key: api-token
+        sources:
+          - gateway-httproute
+        policy: sync
+        registry: txt
+        txtOwnerId: hetzner-talos-cluster-1
+        domainFilters:
+          - cereghino.me

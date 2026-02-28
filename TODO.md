@@ -1,149 +1,106 @@
-# TODO — Unresolved Architectural Decisions
+TODO — Unresolved Architectural Decisions
+This file tracks architectural gaps in the Kubernetes platform.  
+Each section is a decision to be made — not a bug to fix.
 
-> This file tracks architectural gaps in the Kubernetes platform.  
-> Each section is a decision to be made — not a bug to fix.
+🟢 Phase 1: Infrastructure Survival (Current Focus)
+1. Secrets Management
 
----
+Question: How do we stop creating manual secrets?
 
-## 1. Stateful Data / Databases
+Current State: Cloudflare token is a manual secret.
 
-**Question:** How should we run databases in the cluster?
+Goal: Deploy External Secrets Operator (ESO) linked to 1Password.
 
-**Option A — Hetzner Block Volumes (CSI)**
-- Use the Hetzner CSI driver (already deployed) to provision network-attached volumes.
-- Run a database operator like [CloudNativePG](https://cloudnative-pg.io) on top.
-- Pros: Simple, managed backups via Hetzner snapshots, no extra infra.
-- Cons: Network latency (~1ms), IOPS capped by Hetzner volume tier.
+Action: Install ESO and configure a SecretStore to pull credentials directly from 1Password via the Connect API.
 
-**Option B — Local NVMe + Distributed Storage**
-- Use dedicated server types with local NVMe (e.g., CCX/CAX with local disks).
-- Pool disks with [Longhorn](https://longhorn.io) (already available in module) or Ceph/Rook.
-- Pros: Higher IOPS, lower latency for write-heavy workloads.
-- Cons: More complex, requires replication config, node loss = data risk.
+2. Disaster Recovery
 
-**Decision criteria:** Profile the actual workload first. CSI volumes are the 80/20 choice for most apps.
+Question: If the single Control Plane node dies, is the cluster gone?
 
----
+etcd Snapshots: Create a Hetzner Object Storage bucket. Update terraform.tfvars with the S3 credentials to push automated encrypted etcd snapshots.
 
-## 2. Disaster Recovery
+Application Backup: Install Velero to back up manifests and PV data to S3.
 
-**Question:** How do we protect cluster state and application data?
+Goal: Be able to run tofu destroy and tofu apply and have the cluster back in 15 minutes.
 
-### etcd Snapshots
-- The module supports [Talos Backup](https://github.com/siderolabs/talos-backup) out of the box.
-- Configure `talos_backup_s3_hcloud_url` in `terraform.tfvars` to push etcd snapshots to [Hetzner Object Storage](https://docs.hetzner.com/storage/object-storage).
-- **Action:** Create an Object Storage bucket and add the S3 credentials to tfvars.
+3. DNS Automation
 
-### Application Backup
-- Evaluate [Velero](https://velero.io) for backing up:
-  - Kubernetes manifests (Deployments, Services, ConfigMaps)
-  - Persistent Volume data (via CSI snapshots or Restic)
-- Alternative: If using GitOps (see §5), manifests are already in Git — only PV data needs backup.
+Question: How do we stop manually creating A-records in Cloudflare?
 
-### Recovery Testing
-- Document and test a full recovery runbook:
-  1. Recreate cluster from `tofu apply`
-  2. Restore etcd from snapshot
-  3. Restore PV data from Velero / Object Storage
+Goal: Deploy ExternalDNS.
 
----
+Action: Configure ExternalDNS to watch Gateway and HTTPRoute resources.
 
-## 3. Layer 7 Traffic & Security
+Result: Creating a route for app.cereghino.me automatically creates the Cloudflare DNS record.
 
-**Question:** How do we handle HTTP routing, TLS termination, and WAF?
+🟡 Phase 2: Workload Capability
+4. Stateful Data / Databases
 
-### Ingress Controller
-Hetzner Load Balancers are L4 only. An in-cluster L7 proxy is required.
+Question: How should we run databases in the cluster?
 
-| Option | Notes |
-|--------|-------|
-| **Cilium Gateway API** | Already bundled in module (`cilium_gateway_api_enabled`). Modern Gateway API spec. Envoy-backed. Recommended starting point. |
-| **Traefik** | Mature, good dashboard, middleware ecosystem. Consider if you need advanced routing. |
-| **Envoy / Contour** | Raw Envoy via Contour. More control, more config. |
-| **ingress-nginx** | Being [retired March 2026](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/). Avoid for new projects. |
+Recommendation: Start with Hetzner Block Volumes (CSI) for the "80/20" simplicity.
 
-**Recommendation:** Start with Cilium Gateway API since the module already supports it. Enable with:
-```hcl
-cilium_gateway_api_enabled = true
-cert_manager_enabled       = true
-```
+Future-proofing: If IOPS become a bottleneck, evaluate pooling local NVMe with Longhorn.
 
-### WAF (Web Application Firewall)
-- Evaluate [Coraza](https://coraza.io) as a WAF sidecar or middleware.
-- Coraza implements OWASP Core Rule Set (CRS) and can be embedded in Envoy/Traefik.
-- Alternative: Cloudflare/Fastly in front for edge WAF + DDoS protection.
+Operator: Deploy CloudNativePG to manage Postgres life-cycles on top of the CSI.
 
----
+5. Layer 7 Security (WAF)
 
-## 4. Observability & Monitoring
+Question: Now that we have HTTPS, how do we stop bot attacks?
 
-**Question:** How do we observe cluster and application health?
+Action: Evaluate Coraza WAF as an Envoy filter within the Cilium Gateway.
 
-- **Metrics:** Deploy Prometheus + Grafana (the module already installs Prometheus Operator CRDs via `prometheus_operator_crds_enabled`).
-  - Options: [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) Helm chart, or Victoria Metrics for lower resource usage.
-- **Logging:** Centralized log aggregation.
-  - Options: Loki + Promtail (lightweight), or Elastic/OpenSearch (heavyweight).
-  - Consider Talos `talos_logging_destinations` variable for sending machine-level logs.
-- **Tracing:** OpenTelemetry Collector → Tempo or Jaeger for distributed tracing.
-- **Alerting:** Alertmanager → PagerDuty / Slack / Email.
+Alternative: Toggle the Cloudflare "Proxy" (Orange Cloud) on for basic edge protection.
+
+🔵 Phase 3: Operations & Growth
+6. Observability & Monitoring
+
+Question: How do we see what's happening?
+
+Metrics: Deploy the kube-prometheus-stack (Prometheus + Grafana).
+
+Logging: Evaluate Loki for lightweight log aggregation.
+
+Network: Enable Cilium Hubble to visualize pod-to-pod traffic.
+
+7. GitOps / Continuous Delivery
+
+Question: How do we move away from kubectl apply?
+
+Goal: Implement ArgoCD or Flux.
+
+Result: The cluster becomes a mirror of the GitHub repository.
+
+8. Scaling & Multi-Environment
+
+Scaling: Upgrade to 3 Control Plane nodes for HA and enable the Cluster Autoscaler when costs permit.
+
+Environment: Use Namespaces and Kustomize to separate production from experimental workloads.
 
 ---
 
-## 5. GitOps / Continuous Delivery
+🔴 Priority 1: The Foundation (Do this now)
 
-**Question:** How do changes get deployed to the cluster?
+Disaster Recovery (The "Lifeboat"): * Create a Hetzner Object Storage bucket (S3 compatible).
 
-| Option | Notes |
-|--------|-------|
-| **ArgoCD** | Pull-based GitOps. Watches a Git repo, auto-syncs to cluster. Rich UI. |
-| **Flux** | Pull-based GitOps. Lighter weight, more composable. |
-| **CI-driven `kubectl apply`** | Push-based. Simpler but less auditable. |
+Configure Talos etcd backups to this bucket so the cluster's brain is safe.
 
-**Consideration:** Since this is a monorepo, ArgoCD/Flux can watch `apps/` and `platform/` directories for manifests. Infrastructure changes in `infrastracture/` stay with `tofu apply` (either manual or CI-gated).
+Persistent Storage Policy: * We will use Hetzner CSI (Block Storage) for Vaultwarden.
 
----
+Action: Review the StorageClass to ensure reclaimPolicy: Retain is set, so deleting a helm release doesn't accidentally wipe your database.
 
-## 6. Secrets Management
+🟡 Priority 2: The Vault Deployment
 
-**Question:** How do we get secrets into the cluster securely?
+Vaultwarden Implementation: * Deploy Vaultwarden with a sidecar container (like backupto-s3) that streams the SQLite database to your Hetzner S3 bucket every hour.
 
-| Option | Notes |
-|--------|-------|
-| **External Secrets Operator** | Syncs secrets from external stores (1Password, Vault, AWS SM) into K8s Secrets. Since we already use 1Password, this is a natural fit with the [1Password Connect provider](https://github.com/external-secrets/external-secrets). |
-| **Sealed Secrets** | Encrypt secrets in Git. Decrypted in-cluster by a controller. |
-| **SOPS + age** | Encrypt secret files with age keys. Decrypt at deploy time. |
+Route vault.cereghino.me through your Cilium Gateway.
 
----
+External Secrets Operator (ESO):
 
-## 7. DNS Automation
+Now that the vault is inside the cluster, we'll configure ESO to pull from the local Vaultwarden API instead of 1Password.
 
-**Question:** How do DNS records get created when services are exposed?
+🟢 Priority 3: Automation & Cleaning
 
-- [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) can auto-create DNS records from Gateway/Ingress annotations.
-- Supports Hetzner DNS, Cloudflare, Route53, etc.
-- Pairs well with Cert Manager for automated TLS.
+DNS Automation (ExternalDNS): Stop manual A-record creation in Cloudflare.
 
----
-
-## 8. Scaling Strategy
-
-**Question:** When do we enable the Cluster Autoscaler?
-
-- Current setup is static: 1 CP + 2 Workers.
-- The module supports autoscaler nodepools (`cluster_autoscaler_nodepools` variable).
-- **Decision point:** Enable when workloads have variable demand. For now, manual `count` changes in `terraform.tfvars` are sufficient.
-- **HA upgrade path:** Scale to 3 CP nodes before running any production workloads (etcd quorum requires odd number ≥ 3).
-
----
-
-## 9. Multi-Environment Strategy
-
-**Question:** How do we separate dev / staging / production?
-
-| Option | Notes |
-|--------|-------|
-| **Namespaces** | Single cluster, workloads separated by namespace + RBAC + NetworkPolicy. Cheapest. |
-| **Separate clusters** | Full isolation. Expensive but safest. Use OpenTofu workspaces or separate tfvars. |
-| **Kustomize overlays** | Base manifests in `platform/`, per-env overlays. Works with both options above. |
-
-**Recommendation:** Start with namespaces. Migrate to separate clusters only if compliance or blast-radius requires it.
+Monitoring: Get Prometheus/Grafana up so you get an alert if Vaultwarden's disk is getting full.
