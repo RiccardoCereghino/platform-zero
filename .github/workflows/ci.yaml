@@ -20,7 +20,8 @@ jobs:
       HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.AWS_REGION || 'eu-central-1' }}
+      # This is specifically for the AWS provider (backups)
+      TF_VAR_talos_backup_s3_region: ${{ vars.BACKUP_S3_REGION || 'nbg1' }}
 
     steps:
       - name: Checkout Code
@@ -38,7 +39,10 @@ jobs:
 
       - name: Tofu Init
         id: init
-        run: tofu init
+        run: |
+          tofu init \
+            -backend-config="region=${{ vars.STATE_S3_REGION || 'hel1' }}" \
+            -backend-config="endpoints={s3=\"https://${{ vars.STATE_S3_REGION || 'hel1' }}.your-objectstorage.com\"}"
 
       - name: Tofu Validate
         id: validate

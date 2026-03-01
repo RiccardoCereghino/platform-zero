@@ -4,14 +4,14 @@ provider "hcloud" {
 }
 
 provider "aws" {
-  region                      = "nbg1"
+  region                      = var.talos_backup_s3_region
   skip_region_validation      = true
   skip_credentials_validation = true
   skip_requesting_account_id  = true
   skip_metadata_api_check     = true
   s3_use_path_style           = true
   endpoints {
-    s3 = "https://nbg1.your-objectstorage.com"
+    s3 = "https://${var.talos_backup_s3_region}.your-objectstorage.com"
   }
 }
 

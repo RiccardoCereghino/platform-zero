@@ -4,8 +4,6 @@ terraform {
   backend "s3" {
     bucket                      = "cereghino-tf-state"
     key                         = "k8s/terraform.tfstate"
-    region                      = "hel1" 
-    endpoints                   = { s3 = "https://hel1.your-objectstorage.com" }
     skip_credentials_validation = true
     skip_metadata_api_check     = true
     skip_requesting_account_id  = true
