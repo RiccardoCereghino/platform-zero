@@ -41,4 +41,4 @@ jobs:
             -backend-config="endpoints={s3=\"https://${{ vars.STATE_S3_REGION || 'hel1' }}.your-objectstorage.com\"}"
 
       - name: Tofu Apply
-        run: tofu apply -auto-approve
+        run: tofu apply -auto-approve -var="hcloud_token=${{ secrets.HCLOUD_TOKEN }}"
