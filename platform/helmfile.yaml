@@ -6,6 +6,10 @@ repositories:
     url: https://charts.dexidp.io
   - name: oauth2-proxy
     url: https://oauth2-proxy.github.io/manifests
+  - name: vaultwarden
+    url: https://guerzon.github.io/vaultwarden
+  - name: vmware-tanzu
+    url: https://vmware-tanzu.github.io/helm-charts
 
 releases:
   - name: external-dns
@@ -93,4 +97,71 @@ releases:
           - name: allowed-emails
             mountPath: /etc/oauth2-proxy
             readOnly: true
+
+  - name: vaultwarden
+    namespace: vault
+    chart: vaultwarden/vaultwarden
+    version: 0.34.6
+    values:
+      - domain: "https://vault.cereghino.me"
+        ipHeader: "X-Forwarded-For"
+        image:
+          tag: "1.35.4-alpine"
+        signupsAllowed: false
+        adminToken:
+          existingSecret: "vaultwarden-secrets"
+          existingSecretKey: "ADMIN_TOKEN"
+        database:
+          type: "postgresql"
+          host: "vaultwarden-db-rw"
+          port: "5432"
+          dbName: "vaultwarden"
+          existingSecret: "vaultwarden-db-app"
+          existingSecretUserKey: "username"
+          existingSecretPasswordKey: "password"
+          connectionRetries: 15
+          maxConnections: 10
+        initContainers:
+          - name: wait-for-db
+            image: postgres:15-alpine
+            command: 
+              - "sh"
+              - "-c"
+              - |
+                until pg_isready -h vaultwarden-db-rw -p 5432 -U vaultwarden; do 
+                  echo waiting for database; 
+                  sleep 2; 
+                done;
+        persistence:
+          data:
+            enabled: true
+            storageClass: "vault-storage"
+            size: 10Gi
+
+  - name: velero
+    namespace: velero
+    chart: vmware-tanzu/velero
+    disableValidation: true
+    values:
+      - initContainers:
+          - name: velero-plugin-for-aws
+            image: velero/velero-plugin-for-aws:v1.9.0
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        deployNodeAgent: true
+        snapshotsEnabled: false
+        credentials:
+          existingSecret: cloud-credentials
+        configuration:
+          backupStorageLocation:
+            - name: default
+              provider: aws
+              bucket: cereghino-infra-backups
+              prefix: velero
+              config:
+                region: nbg1
+                s3ForcePathStyle: "true"
+                s3Url: https://nbg1.your-objectstorage.com
 
