@@ -1,0 +1,35 @@
+# System / OS
+.DS_Store
+*.swp
+*~
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Environment variables
+.env
+.direnv/
+
+# OpenTofu / Terraform
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfvars
+**/*.tfvars.json
+**/.terraform/
+**/crash.log
+**/crash.*.log
+**/override.tf
+**/override.tf.json
+**/*_override.tf
+**/*_override.tf.json
+
+# Helm working directory
+**/.helm/
+
+# Sensitive cluster credentials
+**/kubeconfig
+**/talosconfig
+
+# Packer
+**/packer/.packer/
