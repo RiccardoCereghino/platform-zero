@@ -114,7 +114,8 @@ jobs:
           sudo mv kubeconform /usr/local/bin/
 
       - name: Yamllint
-        run: yamllint -d "{extends: default, rules: {line-length: disable, document-start: disable}}" .
+        run: |
+          yamllint -d "{extends: default, rules: {line-length: disable, document-start: disable}}" .
 
       - name: Helmfile Lint
         run: helmfile lint
