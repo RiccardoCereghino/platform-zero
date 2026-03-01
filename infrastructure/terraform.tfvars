@@ -49,7 +49,7 @@ cilium_hubble_ui_enabled    = true
 # ──────────────────────────────────────────────────────────────
 # Observability — Metrics Server + Prometheus Operator CRDs
 # ──────────────────────────────────────────────────────────────
-metrics_server_enabled          = true
+metrics_server_enabled           = true
 prometheus_operator_crds_enabled = true
 
 # ──────────────────────────────────────────────────────────────
@@ -87,8 +87,8 @@ hcloud_csi_storage_classes = [
 # ──────────────────────────────────────────────────────────────
 # OIDC Configuration
 # ──────────────────────────────────────────────────────────────
-oidc_enabled          = true
-oidc_issuer_url       = "https://dex.cereghino.me"
-oidc_client_id        = "kubernetes-cli"
-oidc_username_claim   = "email"
-oidc_groups_claim     = "groups"
+oidc_enabled        = true
+oidc_issuer_url     = "https://dex.cereghino.me"
+oidc_client_id      = "kubernetes-cli"
+oidc_username_claim = "email"
+oidc_groups_claim   = "groups"

@@ -7,6 +7,6 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 subjects:
-- kind: User
-  name: "riccardo.cereghino@gmail.com"
-  apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: "riccardo.cereghino@gmail.com"
+    apiGroup: rbac.authorization.k8s.io

@@ -8,7 +8,7 @@ data:
     {
       order coraza_waf first
     }
-    
+
     (waf) {
       coraza_waf {
         directives `
