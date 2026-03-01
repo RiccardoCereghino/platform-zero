@@ -3,7 +3,7 @@ name: Infrastructure CD
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'infrastructure/**'
 
