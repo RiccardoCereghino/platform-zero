@@ -34,14 +34,14 @@ data:
         `
       }
     }
-    
+
     vault.cereghino.me:80 {
       import waf
       reverse_proxy vaultwarden.vault.svc.cluster.local:80 {
         header_up X-Real-IP {remote_host}
       }
     }
-    
+
     grafana.cereghino.me:80 {
       import waf
       reverse_proxy kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80

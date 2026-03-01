@@ -36,6 +36,9 @@ jobs:
         with:
           tofu_version: latest
 
+      - name: Install talosctl
+        run: curl -sL https://talos.dev/install | sh
+
       - name: Tofu Format
         id: fmt
         run: tofu fmt -check
