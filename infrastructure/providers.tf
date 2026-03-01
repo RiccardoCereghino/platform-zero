@@ -4,13 +4,14 @@ provider "hcloud" {
 }
 
 provider "aws" {
-  region                      = "hel1"
+  region                      = "nbg1"
   skip_region_validation      = true
   skip_credentials_validation = true
   skip_requesting_account_id  = true
   skip_metadata_api_check     = true
+  s3_use_path_style           = true
   endpoints {
-    s3 = "https://hel1.your-objectstorage.com"
+    s3 = "https://nbg1.your-objectstorage.com"
   }
 }
 

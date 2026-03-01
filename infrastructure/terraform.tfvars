@@ -45,3 +45,12 @@ cert_manager_enabled        = true
 cilium_hubble_enabled       = true
 cilium_hubble_relay_enabled = true
 cilium_hubble_ui_enabled    = true
+
+# ──────────────────────────────────────────────────────────────
+# Etcd Backup Configuration
+# ──────────────────────────────────────────────────────────────
+talos_backup_schedule              = "0 * * * *"
+talos_backup_s3_bucket             = "cereghino-infra-backups"
+talos_backup_s3_endpoint           = "https://nbg1.your-objectstorage.com"
+talos_backup_s3_region             = "nbg1"
+talos_backup_age_x25519_public_key = "age1xpjupmvsge5h30fpsf0ykz4h3z9sp4942veq6qfshcw893kwy3lsv6r5nd"
