@@ -54,3 +54,14 @@ talos_backup_s3_bucket             = "cereghino-infra-backups"
 talos_backup_s3_endpoint           = "https://nbg1.your-objectstorage.com"
 talos_backup_s3_region             = "nbg1"
 talos_backup_age_x25519_public_key = "age1xpjupmvsge5h30fpsf0ykz4h3z9sp4942veq6qfshcw893kwy3lsv6r5nd"
+
+# ──────────────────────────────────────────────────────────────
+# Storage Configuration
+# ──────────────────────────────────────────────────────────────
+hcloud_csi_storage_classes = [
+  {
+    name          = "vault-storage"
+    encrypted     = true
+    reclaimPolicy = "Retain"
+  }
+]
