@@ -17,6 +17,19 @@ data:
           Include /opt/coraza/config/crs-setup.conf
           Include /opt/coraza/owasp-crs/rules/*.conf
           SecRuleEngine On
+
+          # 1. Allow PUT/DELETE methods for Vaultwarden
+          SecAction \
+            "id:900200,\
+            phase:1,\
+            nolog,\
+            pass,\
+            t:none,\
+            setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT DELETE'"
+          
+          # 2. Disable SQLi checks for Grafana/Prometheus queries
+          SecRule REQUEST_FILENAME "@contains /api/ds/query" \
+              "id:1002,phase:1,pass,nolog,ctl:ruleRemoveById=942100"
         `
       }
     }
@@ -57,10 +70,14 @@ spec:
             - name: config
               mountPath: /config/caddy/Caddyfile
               subPath: Caddyfile
+            - name: tmp-dir
+              mountPath: /tmp/coraza
       volumes:
         - name: config
           configMap:
             name: coraza-waf-config
+        - name: tmp-dir
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
