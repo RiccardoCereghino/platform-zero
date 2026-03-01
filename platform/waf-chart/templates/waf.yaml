@@ -1,0 +1,94 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-waf-config
+  namespace: security
+data:
+  Caddyfile: |
+    {
+      order coraza_waf first
+    }
+    
+    (waf) {
+      coraza_waf {
+        directives `
+          Include /opt/coraza/config/coraza.conf
+          Include /opt/coraza/config/crs-setup.conf
+          Include /opt/coraza/owasp-crs/rules/*.conf
+          SecRuleEngine On
+        `
+      }
+    }
+    
+    vault.cereghino.me:80 {
+      import waf
+      reverse_proxy vaultwarden.vault.svc.cluster.local:80
+    }
+    
+    grafana.cereghino.me:80 {
+      import waf
+      reverse_proxy kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coraza-waf
+  namespace: security
+  labels:
+    app: coraza-waf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coraza-waf
+  template:
+    metadata:
+      labels:
+        app: coraza-waf
+    spec:
+      containers:
+        - name: coraza-caddy
+          image: ghcr.io/coreruleset/coraza-crs:caddy-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /config/caddy/Caddyfile
+              subPath: Caddyfile
+      volumes:
+        - name: config
+          configMap:
+            name: coraza-waf-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coraza-waf
+  namespace: security
+spec:
+  selector:
+    app: coraza-waf
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: waf-gateway-grant
+  namespace: security
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: vault
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: monitoring
+  to:
+    - group: ""
+      kind: Service
+      name: coraza-waf

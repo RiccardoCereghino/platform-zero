@@ -178,3 +178,7 @@ releases:
           prometheusSpec:
             serviceMonitorSelectorNilUsesHelmValues: false
 
+  - name: waf
+    namespace: security
+    chart: ./waf-chart
+

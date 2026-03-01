@@ -1,0 +1,5 @@
+apiVersion: v2
+name: waf
+description: A Helm chart for Coraza WAF
+type: application
+version: 0.1.0

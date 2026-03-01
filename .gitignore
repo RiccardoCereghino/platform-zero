@@ -1,6 +1,7 @@
 # System / OS
 .DS_Store
 *.swp
+*.swo
 *~
 
 # Editor / IDE
@@ -9,14 +10,15 @@
 
 # Environment variables
 .env
+.env.*
 .direnv/
 
 # OpenTofu / Terraform
+**/.terraform/
 **/*.tfstate
 **/*.tfstate.*
 **/*.tfvars
 **/*.tfvars.json
-**/.terraform/
 **/crash.log
 **/crash.*.log
 **/override.tf
@@ -24,12 +26,26 @@
 **/*_override.tf
 **/*_override.tf.json
 
-# Helm working directory
-**/.helm/
-
-# Sensitive cluster credentials
-**/kubeconfig
-**/talosconfig
-
 # Packer
 **/packer/.packer/
+
+# Talos Linux Generated Files
+**/talosconfig
+**/*.talosconfig
+**/controlplane.yaml
+**/worker.yaml
+**/secrets.yaml
+
+# Kubernetes & Helmfile
+**/kubeconfig
+**/*.kubeconfig
+**/.helm/
+**/.helmfile/
+**/charts/
+
+# Secrets & Encryption (SOPS / Age / PKI)
+**/*.agekey
+**/age.txt
+**/keys.txt
+**/*.pem
+**/*.key
