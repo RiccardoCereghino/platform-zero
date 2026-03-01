@@ -2,6 +2,10 @@
 repositories:
   - name: external-dns
     url: https://kubernetes-sigs.github.io/external-dns/
+  - name: dex
+    url: https://charts.dexidp.io
+  - name: oauth2-proxy
+    url: https://oauth2-proxy.github.io/manifests
 
 releases:
   - name: external-dns
@@ -24,3 +28,62 @@ releases:
         txtOwnerId: hetzner-talos-cluster-1
         domainFilters:
           - cereghino.me
+
+  - name: dex
+    namespace: auth
+    chart: dex/dex
+    values:
+      - envFrom:
+          - secretRef:
+              name: dex-secrets
+        config:
+          issuer: https://dex.cereghino.me
+          storage:
+            type: kubernetes
+            config:
+              inCluster: true
+          connectors:
+            - type: github
+              id: github
+              name: GitHub
+              config:
+                clientID: $GITHUB_CLIENT_ID
+                clientSecret: $GITHUB_CLIENT_SECRET
+                redirectURI: https://dex.cereghino.me/callback
+          staticClients:
+            - id: oauth2-proxy
+              name: OAuth2 Proxy
+              secret: "07844409ba0aaf2b007a161d6394456541df8be98d18e97d2792be645d6d3303"
+              redirectURIs:
+                - https://hubble.cereghino.me/oauth2/callback
+          oauth2:
+            skipApprovalScreen: true
+
+  - name: oauth2-proxy
+    namespace: kube-system
+    chart: oauth2-proxy/oauth2-proxy
+    values:
+      - config:
+          existingSecret: oauth2-proxy-secrets
+        extraArgs:
+          provider: oidc
+          oidc-issuer-url: https://dex.cereghino.me
+          email-domain: "*"
+          authenticated-emails-file: /etc/oauth2-proxy/allowed-emails.txt
+          upstream: http://hubble-ui.kube-system.svc.cluster.local:80
+          cookie-secure: "true"
+          cookie-refresh: 1h
+          redirect-url: https://hubble.cereghino.me/oauth2/callback
+          pass-authorization-header: "true"
+          set-authorization-header: "true"
+          scope: "openid email profile"
+          code-challenge-method: S256
+        extraVolumes:
+          - name: allowed-emails
+            configMap:
+              name: oauth2-proxy-allowed-emails
+        extraVolumeMounts:
+          - name: allowed-emails
+            mountPath: /etc/oauth2-proxy
+            readOnly: true
+
