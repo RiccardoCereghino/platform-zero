@@ -1,0 +1,15 @@
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: grafana-gateway-grant
+  namespace: monitoring
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: default
+  to:
+    - group: ""
+      kind: Service
+      name: kube-prometheus-stack-grafana
