@@ -55,8 +55,9 @@ prometheus_operator_crds_enabled = true
 # ──────────────────────────────────────────────────────────────
 # Encryption — Transparent WireGuard pod-to-pod encryption
 # ──────────────────────────────────────────────────────────────
-cilium_encryption_enabled = true
-cilium_encryption_type    = "wireguard"
+cilium_encryption_enabled     = true
+cilium_encryption_type        = "wireguard"
+cilium_egress_gateway_enabled = true
 
 # ──────────────────────────────────────────────────────────────
 # Bug Fix — Disable proxy protocol to avoid Cilium IPv6 issue
