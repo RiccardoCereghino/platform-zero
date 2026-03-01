@@ -1,4 +1,3 @@
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -15,28 +14,32 @@ data:
         directives `
           Include /opt/coraza/config/coraza.conf
           Include /opt/coraza/config/crs-setup.conf
+
+          # 1. FIX: Explicitly remove Method Enforcement (911100) for Vaultwarden
+          # Correct operator is @beginsWith
+          SecRule REQUEST_FILENAME "@beginsWith /api/" \
+              "id:1001,phase:1,pass,nolog,ctl:ruleRemoveById=911100"
+
+          # 2. FIX: Disable SQLi checks for Vaultwarden API
+          SecRule REQUEST_FILENAME "@beginsWith /api/" \
+              "id:1002,phase:1,pass,nolog,ctl:ruleRemoveById=942100"
+
+          # 3. FIX: Disable SQLi for Grafana/Prometheus queries
+          SecRule REQUEST_FILENAME "@contains /api/ds/query" \
+              "id:1003,phase:1,pass,nolog,ctl:ruleRemoveById=942100"
+
           Include /opt/coraza/owasp-crs/rules/*.conf
           SecRuleEngine On
-
-          # 1. Allow PUT/DELETE methods for Vaultwarden
-          SecAction \
-            "id:900200,\
-            phase:1,\
-            nolog,\
-            pass,\
-            t:none,\
-            setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT DELETE'"
-          
-          # 2. Disable SQLi checks for Grafana/Prometheus queries
-          SecRule REQUEST_FILENAME "@contains /api/ds/query" \
-              "id:1002,phase:1,pass,nolog,ctl:ruleRemoveById=942100"
+          SecTmpDir /tmp/coraza
         `
       }
     }
     
     vault.cereghino.me:80 {
       import waf
-      reverse_proxy vaultwarden.vault.svc.cluster.local:80
+      reverse_proxy vaultwarden.vault.svc.cluster.local:80 {
+        header_up X-Real-IP {remote_host}
+      }
     }
     
     grafana.cereghino.me:80 {
