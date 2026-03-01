@@ -47,6 +47,23 @@ cilium_hubble_relay_enabled = true
 cilium_hubble_ui_enabled    = true
 
 # ──────────────────────────────────────────────────────────────
+# Observability — Metrics Server + Prometheus Operator CRDs
+# ──────────────────────────────────────────────────────────────
+metrics_server_enabled          = true
+prometheus_operator_crds_enabled = true
+
+# ──────────────────────────────────────────────────────────────
+# Encryption — Transparent WireGuard pod-to-pod encryption
+# ──────────────────────────────────────────────────────────────
+cilium_encryption_enabled = true
+cilium_encryption_type    = "wireguard"
+
+# ──────────────────────────────────────────────────────────────
+# Bug Fix — Disable proxy protocol to avoid Cilium IPv6 issue
+# ──────────────────────────────────────────────────────────────
+cilium_gateway_api_proxy_protocol_enabled = false
+
+# ──────────────────────────────────────────────────────────────
 # Etcd Backup Configuration
 # ──────────────────────────────────────────────────────────────
 talos_backup_schedule              = "0 * * * *"

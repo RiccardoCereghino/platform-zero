@@ -37,7 +37,7 @@ metadata:
   namespace: default
   annotations:
     load-balancer.hetzner.cloud/location: nbg1
-    load-balancer.hetzner.cloud/uses-proxyprotocol: "true"
+    load-balancer.hetzner.cloud/uses-proxyprotocol: "false"
     cert-manager.io/cluster-issuer: letsencrypt-dns
 spec:
   gatewayClassName: cilium
