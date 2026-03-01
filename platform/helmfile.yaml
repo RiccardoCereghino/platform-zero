@@ -56,6 +56,12 @@ releases:
               secret: "07844409ba0aaf2b007a161d6394456541df8be98d18e97d2792be645d6d3303"
               redirectURIs:
                 - https://hubble.cereghino.me/oauth2/callback
+            - id: kubernetes-cli
+              name: "Kubernetes CLI"
+              secret: k8s-cli-secret-99
+              redirectURIs:
+                - http://localhost:8000
+                - http://localhost:18000
           oauth2:
             skipApprovalScreen: true
 
@@ -78,6 +84,7 @@ releases:
           set-authorization-header: "true"
           scope: "openid email profile"
           code-challenge-method: S256
+          flush-interval: 1s
         extraVolumes:
           - name: allowed-emails
             configMap:

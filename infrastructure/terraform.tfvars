@@ -82,3 +82,12 @@ hcloud_csi_storage_classes = [
     reclaimPolicy = "Retain"
   }
 ]
+
+# ──────────────────────────────────────────────────────────────
+# OIDC Configuration
+# ──────────────────────────────────────────────────────────────
+oidc_enabled          = true
+oidc_issuer_url       = "https://dex.cereghino.me"
+oidc_client_id        = "kubernetes-cli"
+oidc_username_claim   = "email"
+oidc_groups_claim     = "groups"
