@@ -18,6 +18,7 @@ configs:
         - email
         - profile
   rbac:
+    scopes: '[email]'
     policy.csv: |
       g, riccardo.cereghino@gmail.com, role:admin
   secret:
