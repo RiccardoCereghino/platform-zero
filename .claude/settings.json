@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATH\"; case \"$file\" in *terraform.tfstate*|*-secrets.yaml|*kubeconfig|*talosconfig) echo 'BLOCKED: Refusing to edit sensitive file'; exit 1;; esac"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATH\"; if [[ \"$file\" == *.tf ]]; then tofu fmt \"$file\" 2>/dev/null; fi"
+          },
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATH\"; if [[ \"$file\" == *.yaml || \"$file\" == *.yml ]]; then yamllint -c /Users/cerre/DevOps/.yamllint \"$file\" 2>&1 | head -20; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

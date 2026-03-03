@@ -24,6 +24,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       # This is specifically for the AWS provider (backups)
       TF_VAR_talos_backup_s3_region: ${{ vars.BACKUP_S3_REGION || 'nbg1' }}
+      TF_VAR_sops_age_private_key: ${{ secrets.SOPS_AGE_KEY }}
 
     steps:
       - name: Checkout Code

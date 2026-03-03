@@ -894,6 +894,14 @@ variable "talos_backup_schedule" {
   description = "The schedule for Talos Backup"
 }
 
+# SOPS
+variable "sops_age_private_key" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "SOPS age private key for in-cluster secret decryption (e.g., ArgoCD KSOPS)."
+}
+
 
 # Kubernetes
 variable "kubernetes_version" {
