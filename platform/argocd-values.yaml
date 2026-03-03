@@ -27,9 +27,6 @@ repoServer:
     - name: custom-tools
       mountPath: /usr/local/bin/kustomize
       subPath: kustomize
-    - name: custom-tools
-      mountPath: /usr/local/bin/sops
-      subPath: sops
     - name: sops-age-key
       mountPath: /.config/sops/age
   initContainers:
@@ -39,8 +36,7 @@ repoServer:
       args:
         - |
           cp /usr/local/bin/ksops /custom-tools/ksops &&
-          cp /usr/local/bin/kustomize /custom-tools/kustomize &&
-          cp /usr/local/bin/sops /custom-tools/sops
+          cp /usr/local/bin/kustomize /custom-tools/kustomize
       volumeMounts:
         - name: custom-tools
           mountPath: /custom-tools

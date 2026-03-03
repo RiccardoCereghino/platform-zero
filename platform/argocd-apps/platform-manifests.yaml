@@ -7,7 +7,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/RiccardoCereghino/platform-zero.git
+    repoURL: git@github.com:RiccardoCereghino/platform-zero.git
     targetRevision: HEAD
     path: platform
   destination:
