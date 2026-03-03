@@ -6,6 +6,8 @@ generators:
   - ksops-generator.yaml
 
 resources:
+  - monitoring-namespace.yaml
+  - velero-namespace.yaml
   - argocd-route.yaml
   - dex-route.yaml
   - hubble-route.yaml
