@@ -41,6 +41,11 @@ spec:
               redirectURIs:
                 - http://localhost:8000
                 - http://localhost:18000
+            - id: argocd
+              name: ArgoCD
+              secret: "ccfd06505df7b12d90bf475aa5836cac81ad22b4b5dd979c6d4fc5ddfa12a9f8"
+              redirectURIs:
+                - https://argocd.cereghino.me/auth/callback
           oauth2:
             skipApprovalScreen: true
   destination:

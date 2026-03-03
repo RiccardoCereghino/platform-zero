@@ -6,7 +6,23 @@ configs:
   params:
     server.insecure: true
   cm:
+    url: https://argocd.cereghino.me
     kustomize.buildOptions: "--enable-alpha-plugins --enable-exec"
+    oidc.config: |
+      name: Dex
+      issuer: https://dex.cereghino.me
+      clientID: argocd
+      clientSecret: $oidc.dex.clientSecret
+      requestedScopes:
+        - openid
+        - email
+        - profile
+  rbac:
+    policy.csv: |
+      g, riccardo.cereghino@gmail.com, role:admin
+  secret:
+    extra:
+      oidc.dex.clientSecret: "ccfd06505df7b12d90bf475aa5836cac81ad22b4b5dd979c6d4fc5ddfa12a9f8"
 
 repoServer:
   env:

@@ -6,6 +6,7 @@ generators:
   - ksops-generator.yaml
 
 resources:
+  - argocd-route.yaml
   - dex-route.yaml
   - hubble-route.yaml
   - vault-route.yaml
