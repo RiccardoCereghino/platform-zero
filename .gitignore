@@ -52,3 +52,4 @@
 
 # SOPS — decrypted secret backups (never commit these)
 platform/*-secrets.decrypted.yaml
+secrets/*.decrypted.yaml

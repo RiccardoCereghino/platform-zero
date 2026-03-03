@@ -23,7 +23,8 @@ locals {
     local.cluster_autoscaler_manifest != null ? [local.cluster_autoscaler_manifest] : [],
     var.talos_extra_inline_manifests != null ? var.talos_extra_inline_manifests : [],
     local.rbac_manifest != null ? [local.rbac_manifest] : [],
-    local.oidc_manifest != null ? [local.oidc_manifest] : []
+    local.oidc_manifest != null ? [local.oidc_manifest] : [],
+    local.sops_age_key_manifest != null ? [local.sops_age_key_manifest] : []
   )
   talos_manifests = concat(
     var.talos_ccm_enabled ? [

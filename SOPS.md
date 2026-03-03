@@ -1,13 +1,14 @@
 # SOPS + age Secret Encryption
 
-This repository uses [SOPS](https://github.com/getsops/sops) with [age](https://github.com/FiloSottile/age) to encrypt Kubernetes Secrets at rest in git.
+This repository uses [SOPS](https://github.com/getsops/sops) with [age](https://github.com/FiloSottile/age) to encrypt secrets at rest in git.
 
 ## How It Works
 
 - Secret files (`platform/*-secrets.yaml`) are SOPS-encrypted in git
 - Only `stringData` and `data` values are encrypted; keys and metadata stay readable
+- Local environment variables (`secrets/local.env.yaml`) are also SOPS-encrypted
 - The `.sops.yaml` at the repo root configures which files are encrypted and with which age key
-- Decryption requires the age private key (stored as a K8s Secret and in Vaultwarden)
+- Decryption requires the age private key
 
 ## Prerequisites
 
@@ -29,16 +30,15 @@ sudo apt-get install age
 
 ### age Keypair
 
-The age public key is in `.sops.yaml`. The private key is stored in two places:
+The age public key is in `.sops.yaml`. The private key is stored in:
 
-1. **Kubernetes Secret** (for in-cluster decryption, e.g., ArgoCD KSOPS):
-   ```bash
-   kubectl create secret generic sops-age-key \
-     --namespace=argocd \
-     --from-literal=keys.txt="AGE-SECRET-KEY-..."
-   ```
+1. **Kubernetes Secret** — provisioned via Terraform (`infrastructure/sops.tf`) as a Talos inline manifest in `kube-system` namespace. Used for future ArgoCD KSOPS integration.
 
-2. **Vaultwarden** (`vault.cereghino.me`): stored as a secure note for disaster recovery and human access.
+2. **GitHub Actions secret** — `SOPS_AGE_KEY`, used by CI/CD workflows for `tofu plan/apply` and `helmfile apply`.
+
+3. **Vaultwarden** (`vault.cereghino.me`) — stored as a secure note for disaster recovery and human access.
+
+4. **Local** — set via `secrets/local.env.yaml` (self-bootstrapping: the file contains `SOPS_AGE_KEY`).
 
 ### Generating a New Keypair
 
@@ -55,20 +55,57 @@ Update `.sops.yaml` with the new public key, then re-encrypt all secret files:
 ```bash
 # Decrypt with the OLD key, re-encrypt with the NEW key
 export SOPS_AGE_KEY="<old-private-key>"
-for f in platform/*-secrets.yaml; do
+for f in platform/*-secrets.yaml secrets/*.yaml; do
   sops --decrypt --in-place "$f"
 done
 
 export SOPS_AGE_KEY="<new-private-key>"
-for f in platform/*-secrets.yaml; do
+for f in platform/*-secrets.yaml secrets/*.yaml; do
   sops --encrypt --in-place "$f"
 done
 ```
 
 Store the new private key in:
 - Vaultwarden (replace the existing secure note)
-- Kubernetes Secret (`sops-age-key`)
+- `terraform.tfvars` or `TF_VAR_sops_age_private_key` env var (Terraform reprovisions the K8s Secret)
 - GitHub Actions secret (`SOPS_AGE_KEY`)
+- `secrets/local.env.yaml` (re-encrypt with new key)
+
+## Local Development
+
+### Setup (Replaces direnv + 1Password)
+
+```bash
+# 1. Create secrets/local.env.yaml with your actual values (see template below)
+# 2. Encrypt it
+sops --encrypt --in-place secrets/local.env.yaml
+# 3. Load into your shell
+source scripts/env.sh
+```
+
+### Template for `secrets/local.env.yaml`
+
+```yaml
+HCLOUD_TOKEN: <your-hcloud-token>
+TF_VAR_hcloud_token: <same-as-HCLOUD_TOKEN>
+AWS_ACCESS_KEY_ID: <your-s3-access-key>
+AWS_SECRET_ACCESS_KEY: <your-s3-secret-key>
+TF_VAR_talos_backup_s3_access_key: <same-as-AWS_ACCESS_KEY_ID>
+TF_VAR_talos_backup_s3_secret_key: <same-as-AWS_SECRET_ACCESS_KEY>
+TF_VAR_hcloud_csi_encryption_passphrase: <your-csi-passphrase>
+TF_VAR_sops_age_private_key: <your-age-private-key>
+SOPS_AGE_KEY: <your-age-private-key>
+```
+
+### Daily Usage
+
+```bash
+# Load env vars before running tofu/helmfile commands
+source scripts/env.sh
+
+cd infrastructure && tofu plan
+cd platform && helmfile diff
+```
 
 ## Common Operations
 
@@ -122,35 +159,29 @@ sops platform/dex-secrets.yaml
 | `platform/vault-secrets.yaml` | Vaultwarden admin token |
 | `platform/oauth2-proxy-secrets.yaml` | OAuth2 Proxy client credentials and cookie secret |
 | `platform/grafana-secrets.yaml` | Grafana admin username and password |
+| `secrets/local.env.yaml` | Local dev environment variables (replaces `.envrc` + 1Password) |
 
 ## CI/CD Integration
 
-### Current CI (Lint + Validate)
+### CI (Lint + Validate)
 
-SOPS-encrypted files are valid YAML, so `yamllint`, `helmfile lint`, and `kubeconform` work without decryption. No changes needed for CI.
+SOPS-encrypted files are valid YAML, so `yamllint`, `helmfile lint`, and `kubeconform` work without decryption.
 
-### Future Platform CD
+### Infrastructure CD (`cd-infra.yaml`)
 
-When a platform CD workflow is added (e.g., `helmfile apply`), the CI runner will need:
+`TF_VAR_sops_age_private_key` is set from `secrets.SOPS_AGE_KEY`, which Terraform uses to provision the `sops-age-key` Kubernetes Secret via Talos inline manifest.
 
-1. Add `SOPS_AGE_KEY` as a GitHub Actions secret containing the age private key
-2. Install sops in the workflow:
-   ```yaml
-   - name: Install SOPS
-     run: |
-       wget -qO /usr/local/bin/sops \
-         https://github.com/getsops/sops/releases/download/v3.12.1/sops-v3.12.1.linux.amd64
-       chmod +x /usr/local/bin/sops
-   ```
-3. Set the environment variable:
-   ```yaml
-   env:
-     SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-   ```
+### Platform CD (`cd-platform.yaml`)
+
+Triggers on `platform/**` changes to master. Installs SOPS, decrypts `*-secrets.yaml` files, applies them with `kubectl`, then runs `helmfile apply`.
+
+Required GitHub Actions secrets:
+- `SOPS_AGE_KEY` — the age private key
+- `KUBECONFIG_BASE64` — base64-encoded kubeconfig for cluster access
 
 ### ArgoCD (Future)
 
-When ArgoCD is deployed, use the [KSOPS](https://github.com/viaduct-ai/kustomize-sops) plugin to decrypt secrets during GitOps sync. The `sops-age-key` Kubernetes Secret in the `argocd` namespace provides the private key.
+When ArgoCD is deployed, use the [KSOPS](https://github.com/viaduct-ai/kustomize-sops) plugin to decrypt secrets during GitOps sync. The `sops-age-key` Kubernetes Secret in `kube-system` provides the private key (move to `argocd` namespace when deploying ArgoCD).
 
 ## Disaster Recovery
 
@@ -159,4 +190,4 @@ If the age private key is lost:
 1. Check Vaultwarden (`vault.cereghino.me`) for the secure note containing the key
 2. If Vaultwarden is also unavailable, the secrets must be recreated from their original sources (GitHub OAuth app, manually generated tokens, etc.)
 3. Generate a new age keypair, update `.sops.yaml`, and re-encrypt all secret files
-4. Update the Kubernetes Secret and GitHub Actions secret with the new key
+4. Update the Kubernetes Secret (via Terraform), GitHub Actions secret, and `secrets/local.env.yaml`
