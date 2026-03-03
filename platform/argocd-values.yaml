@@ -1,0 +1,46 @@
+---
+dex:
+  enabled: false
+
+configs:
+  params:
+    server.insecure: true
+  cm:
+    kustomize.buildOptions: "--enable-alpha-plugins --enable-exec"
+
+repoServer:
+  env:
+    - name: XDG_CONFIG_HOME
+      value: /.config
+    - name: SOPS_AGE_KEY_FILE
+      value: /.config/sops/age/keys.txt
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+    - name: sops-age-key
+      secret:
+        secretName: sops-age-key
+  volumeMounts:
+    - name: custom-tools
+      mountPath: /usr/local/bin/ksops
+      subPath: ksops
+    - name: custom-tools
+      mountPath: /usr/local/bin/kustomize
+      subPath: kustomize
+    - name: custom-tools
+      mountPath: /usr/local/bin/sops
+      subPath: sops
+    - name: sops-age-key
+      mountPath: /.config/sops/age
+  initContainers:
+    - name: install-ksops
+      image: viaductoss/ksops:v4.3.2
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          cp /usr/local/bin/ksops /custom-tools/ksops &&
+          cp /usr/local/bin/kustomize /custom-tools/kustomize &&
+          cp /usr/local/bin/sops /custom-tools/sops
+      volumeMounts:
+        - name: custom-tools
+          mountPath: /custom-tools

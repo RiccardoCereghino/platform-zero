@@ -1,0 +1,21 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: waf
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/RiccardoCereghino/platform-zero.git
+    targetRevision: HEAD
+    path: platform/waf-chart
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: security
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

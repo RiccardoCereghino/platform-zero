@@ -1,0 +1,45 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth2-proxy
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://oauth2-proxy.github.io/manifests
+    chart: oauth2-proxy
+    targetRevision: "*"
+    helm:
+      valuesObject:
+        config:
+          existingSecret: oauth2-proxy-secrets
+        extraArgs:
+          provider: oidc
+          oidc-issuer-url: https://dex.cereghino.me
+          email-domain: "*"
+          authenticated-emails-file: /etc/oauth2-proxy/allowed-emails.txt
+          upstream: http://hubble-ui.kube-system.svc.cluster.local:80
+          cookie-secure: "true"
+          cookie-refresh: 1h
+          redirect-url: https://hubble.cereghino.me/oauth2/callback
+          pass-authorization-header: "true"
+          set-authorization-header: "true"
+          scope: "openid email profile"
+          code-challenge-method: S256
+          flush-interval: 1s
+        extraVolumes:
+          - name: allowed-emails
+            configMap:
+              name: oauth2-proxy-allowed-emails
+        extraVolumeMounts:
+          - name: allowed-emails
+            mountPath: /etc/oauth2-proxy
+            readOnly: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,57 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vaultwarden
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://guerzon.github.io/vaultwarden
+    chart: vaultwarden
+    targetRevision: 0.34.6
+    helm:
+      valuesObject:
+        domain: "https://vault.cereghino.me"
+        ipHeader: "X-Forwarded-For"
+        image:
+          tag: "1.35.4-alpine"
+        signupsAllowed: false
+        adminToken:
+          existingSecret: "vaultwarden-secrets"
+          existingSecretKey: "ADMIN_TOKEN"
+        database:
+          type: "postgresql"
+          host: "vaultwarden-db-rw"
+          port: "5432"
+          dbName: "vaultwarden"
+          existingSecret: "vaultwarden-db-app"
+          existingSecretUserKey: "username"
+          existingSecretPasswordKey: "password"
+          connectionRetries: 15
+          maxConnections: 10
+        initContainers:
+          - name: wait-for-db
+            image: postgres:15-alpine
+            command:
+              - "sh"
+              - "-c"
+              - |
+                until pg_isready -h vaultwarden-db-rw -p 5432 -U vaultwarden; do
+                  echo waiting for database;
+                  sleep 2;
+                done;
+        persistence:
+          data:
+            enabled: true
+            storageClass: "vault-storage"
+            size: 10Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
