@@ -12,6 +12,8 @@ repositories:
     url: https://vmware-tanzu.github.io/helm-charts
   - name: prometheus-community
     url: https://prometheus-community.github.io/helm-charts
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
 
 releases:
   - name: external-dns
@@ -184,3 +186,10 @@ releases:
   - name: waf
     namespace: security
     chart: ./waf-chart
+
+  - name: argocd
+    namespace: argocd
+    chart: argo/argo-cd
+    version: 7.7.11
+    values:
+      - argocd-values.yaml

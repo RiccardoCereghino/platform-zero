@@ -1,0 +1,17 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generators:
+  - ksops-generator.yaml
+
+resources:
+  - dex-route.yaml
+  - hubble-route.yaml
+  - vault-route.yaml
+  - grafana-route.yaml
+  - redirect-route.yaml
+  - rbac-admin.yaml
+  - vault-db.yaml
+  - grafana-reference-grant.yaml
+  - oauth2-proxy-allowed-emails.yaml

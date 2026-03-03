@@ -32,9 +32,9 @@ sudo apt-get install age
 
 The age public key is in `.sops.yaml`. The private key is stored in:
 
-1. **Kubernetes Secret** — provisioned via Terraform (`infrastructure/sops.tf`) as a Talos inline manifest in `kube-system` namespace. Used for future ArgoCD KSOPS integration.
+1. **Kubernetes Secret** — provisioned via Terraform (`infrastructure/sops.tf`) as a Talos inline manifest in the `argocd` namespace. Mounted into the ArgoCD repo-server for KSOPS decryption at sync time.
 
-2. **GitHub Actions secret** — `SOPS_AGE_KEY`, used by CI/CD workflows for `tofu plan/apply` and `helmfile apply`.
+2. **GitHub Actions secret** — `SOPS_AGE_KEY`, used by the CI/CD Infrastructure workflow for `tofu plan/apply`.
 
 3. **Vaultwarden** (`vault.cereghino.me`) — stored as a secure note for disaster recovery and human access.
 
@@ -171,17 +171,23 @@ SOPS-encrypted files are valid YAML, so `yamllint`, `helmfile lint`, and `kubeco
 
 `TF_VAR_sops_age_private_key` is set from `secrets.SOPS_AGE_KEY`, which Terraform uses to provision the `sops-age-key` Kubernetes Secret via Talos inline manifest.
 
-### Platform CD (`cd-platform.yaml`)
+### Platform CD (ArgoCD + KSOPS)
 
-Triggers on `platform/**` changes to master. Installs SOPS, decrypts `*-secrets.yaml` files, applies them with `kubectl`, then runs `helmfile apply`.
+Platform delivery uses a GitOps pull model via [ArgoCD](https://argo-cd.readthedocs.io/). ArgoCD runs in-cluster and reconciles the `platform/` directory automatically on every push to `master`.
 
-Required GitHub Actions secrets:
-- `SOPS_AGE_KEY` — the age private key
-- `KUBECONFIG_BASE64` — base64-encoded kubeconfig for cluster access
+SOPS-encrypted secrets are decrypted at sync time by [KSOPS](https://github.com/viaduct-ai/kustomize-sops), a kustomize exec plugin installed in the ArgoCD repo-server. The decryption flow:
 
-### ArgoCD (Future)
+1. ArgoCD detects `platform/kustomization.yaml` and runs kustomize with `--enable-alpha-plugins --enable-exec`.
+2. Kustomize invokes the KSOPS generator (`platform/ksops-generator.yaml`), which lists all `*-secrets.yaml` files.
+3. KSOPS calls `sops --decrypt` using the age key mounted from the `sops-age-key` Secret in the `argocd` namespace.
+4. Decrypted Secret manifests are emitted alongside the plain resources listed in `kustomization.yaml`.
 
-When ArgoCD is deployed, use the [KSOPS](https://github.com/viaduct-ai/kustomize-sops) plugin to decrypt secrets during GitOps sync. The `sops-age-key` Kubernetes Secret in `kube-system` provides the private key (move to `argocd` namespace when deploying ArgoCD).
+The repo-server is configured via `platform/argocd-values.yaml`:
+- An init container (`viaductoss/ksops:v4.3.2`) copies `ksops`, `kustomize`, and `sops` binaries into the repo-server.
+- The `sops-age-key` Secret is volume-mounted at `/.config/sops/age/keys.txt`.
+- `SOPS_AGE_KEY_FILE` env var points to the mounted key.
+
+Individual platform components (Helm releases and raw manifests) are defined as ArgoCD Application resources in `platform/argocd-apps/`.
 
 ## Disaster Recovery
 
