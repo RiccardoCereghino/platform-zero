@@ -179,11 +179,11 @@ SOPS-encrypted secrets are decrypted at sync time by [KSOPS](https://github.com/
 
 1. ArgoCD detects `platform/kustomization.yaml` and runs kustomize with `--enable-alpha-plugins --enable-exec`.
 2. Kustomize invokes the KSOPS generator (`platform/ksops-generator.yaml`), which lists all `*-secrets.yaml` files.
-3. KSOPS calls `sops --decrypt` using the age key mounted from the `sops-age-key` Secret in the `argocd` namespace.
+3. KSOPS decrypts the secrets using its embedded SOPS library with the age key mounted from the `sops-age-key` Secret in the `argocd` namespace.
 4. Decrypted Secret manifests are emitted alongside the plain resources listed in `kustomization.yaml`.
 
 The repo-server is configured via `platform/argocd-values.yaml`:
-- An init container (`viaductoss/ksops:v4.3.2`) copies `ksops`, `kustomize`, and `sops` binaries into the repo-server.
+- An init container (`viaductoss/ksops:v4.3.2`) copies `ksops` and `kustomize` binaries into the repo-server. KSOPS v4+ embeds the SOPS library directly (no standalone `sops` binary needed).
 - The `sops-age-key` Secret is volume-mounted at `/.config/sops/age/keys.txt`.
 - `SOPS_AGE_KEY_FILE` env var points to the mounted key.
 

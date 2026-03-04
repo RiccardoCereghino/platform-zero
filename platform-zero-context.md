@@ -36,6 +36,7 @@ A production-grade Kubernetes homelab on Hetzner Cloud running Talos Linux, full
 - `firewall.tf` — Hetzner firewall rules
 - `oidc.tf` — Kubernetes API OIDC via dex.cereghino.me
 - `cert_manager.tf` — cert-manager with topology spread
+- `sops.tf` — Talos inline manifest for `sops-age-key` Secret in `argocd` namespace
 
 ---
 
@@ -50,24 +51,27 @@ A production-grade Kubernetes homelab on Hetzner Cloud running Talos Linux, full
 
 ## Platform Layer
 
-Managed via **Helmfile** (`platform/helmfile.yaml`) with 8 Helm releases + raw Kubernetes manifests (11 YAML files).
+Managed via **ArgoCD** (pull-based GitOps) with 8 Application resources in `platform/argocd-apps/`. Helmfile (`platform/helmfile.yaml`) defines Helm values and is used for CI validation; ArgoCD Applications mirror the values for deployment.
 
-### Helm Releases
+### ArgoCD Applications
 
-| Release | Namespace | Purpose |
-|---------|-----------|---------|
-| external-dns 1.15.0 | external-dns | Cloudflare DNS sync |
-| dex | auth | OIDC provider (GitHub OAuth2) |
-| oauth2-proxy | kube-system | Identity-aware proxy for Hubble UI |
-| vaultwarden 0.34.6 | vault | Password manager (PostgreSQL, LUKS-encrypted PV) |
-| velero | velero | Kubernetes backup to Hetzner S3 |
-| kube-prometheus-stack | monitoring | Prometheus + Grafana |
-| waf (custom chart) | security | Coraza WAF with OWASP CRS |
+| Application | Type | Namespace | Source |
+|-------------|------|-----------|--------|
+| platform-manifests | Kustomize | (multi-ns) | `platform/` directory via kustomize |
+| dex | Helm | auth | charts.dexidp.io |
+| external-dns | Helm | external-dns | kubernetes-sigs.github.io |
+| oauth2-proxy | Helm | kube-system | oauth2-proxy.github.io |
+| vaultwarden | Helm | vault | guerzon.github.io |
+| velero | Helm | velero | vmware-tanzu.github.io |
+| kube-prometheus-stack | Helm | monitoring | prometheus-community.github.io |
+| waf | Helm (custom) | security | git repo `platform/waf-chart/` |
+| argocd | Helm (via helmfile) | argocd | argoproj.github.io (managed by helmfile, not self-managed) |
 
 ### Exposed Services
 
 | Service | Domain | Protection |
 |---------|--------|------------|
+| ArgoCD | argocd.cereghino.me | Dex SSO (GitHub OIDC) |
 | Dex | dex.cereghino.me | Direct (OIDC issuer) |
 | Hubble UI | hubble.cereghino.me | OAuth2-Proxy (GitHub OIDC) |
 | Vaultwarden | vault.cereghino.me | Coraza WAF |
@@ -75,41 +79,55 @@ Managed via **Helmfile** (`platform/helmfile.yaml`) with 8 Helm releases + raw K
 
 ### Security Stack
 
-- **Dex**: OIDC issuer backed by GitHub OAuth2. Static clients: `oauth2-proxy`, `kubernetes-cli`.
+- **Dex**: OIDC issuer backed by GitHub OAuth2. Static clients: `oauth2-proxy`, `kubernetes-cli`, `argocd`.
 - **OAuth2-Proxy**: Protects Hubble UI, email-based access control, PKCE S256.
 - **Coraza WAF**: Custom Helm chart (`platform/waf-chart/`), Caddy + Coraza with OWASP CRS. Proxies to Vaultwarden and Grafana. Rule exclusions: SQLi (942100) for Vaultwarden API and Grafana query API.
-- **OIDC kubeconfig**: kubectl auth flows through Dex → GitHub, no static tokens.
+- **OIDC kubeconfig**: kubectl auth flows through Dex -> GitHub, no static tokens.
+- **ArgoCD RBAC**: email-based role mapping via Dex OIDC (`riccardo.cereghino@gmail.com` -> `role:admin`).
+
+### Secret Management
+
+- **SOPS + age**: All Kubernetes secrets (`platform/*-secrets.yaml`) are SOPS-encrypted in git.
+- **KSOPS**: Kustomize exec plugin in ArgoCD repo-server decrypts secrets at sync time.
+- **Key provisioning**: age private key is stored as a Kubernetes Secret (`sops-age-key` in `argocd` namespace), provisioned via Terraform as a Talos inline manifest (available before ArgoCD starts).
+- **KSOPS init container**: `viaductoss/ksops:v4.3.2` copies `ksops` + `kustomize` binaries into the repo-server. KSOPS v4+ embeds the SOPS library (no standalone `sops` binary).
 
 ### Storage & Backup
 
 - **Hetzner CSI**: `vault-storage` StorageClass with LUKS encryption, Retain policy.
-- **Etcd backups**: Hourly CronJob → Hetzner S3 (`cereghino-infra-backups`), age X25519 encrypted.
+- **Etcd backups**: Hourly CronJob -> Hetzner S3 (`cereghino-infra-backups`), age X25519 encrypted.
 - **Velero**: Kubernetes manifest + PV backup to S3 (prefix: `velero/`), node-agent enabled.
 
 ### Observability
 
-- **kube-prometheus-stack**: Prometheus + Grafana (admin password: hardcoded `prom-operator` — known issue).
+- **kube-prometheus-stack**: Prometheus + Grafana (admin credentials in SOPS-encrypted secret).
 - **Cilium Hubble**: Network flow visualization, UI behind OAuth2-Proxy.
 - **No alerting configured yet** — Alertmanager has no receivers.
+
+### Pod Security
+
+- `monitoring` and `velero` namespaces have `pod-security.kubernetes.io/enforce: privileged` labels (required for node-exporter and velero node-agent DaemonSets).
+- Namespace manifests are managed via kustomize (`platform/monitoring-namespace.yaml`, `platform/velero-namespace.yaml`).
 
 ---
 
 ## CI/CD
 
 ### ci.yaml (PR + push to master)
-**Infrastructure job**: `tofu fmt -check` → `tofu init` → `tofu validate` → `tofu plan` (comments plan on PRs).
-**Platform job**: `yamllint` → `helmfile lint` → `helmfile template` → `kubeconform -strict`.
+**Infrastructure job**: `tofu fmt -check` -> `tofu init` -> `tofu validate` -> `tofu plan` (comments plan on PRs).
+**Platform job**: `yamllint` -> `helmfile lint` -> `helmfile template` -> `kubeconform -strict`.
 
 ### cd-infra.yaml (push to master, path: infrastructure/**)
-Runs `tofu init` → `tofu apply -auto-approve`. Environment: Production.
+Runs `tofu init` -> `tofu apply -auto-approve`. Environment: Production.
 
-**Gap**: No CD pipeline for platform layer — `helmfile apply` is manual.
+### Platform CD (ArgoCD)
+ArgoCD runs in-cluster and auto-syncs all 8 Applications from the `master` branch. No GitHub Actions workflow for platform deployment — ArgoCD polls the git repo and reconciles automatically.
 
 ---
 
 ## Local Development
 
-**Secret management**: direnv (`.envrc`) with 1Password CLI integration. Secrets injected: HCLOUD_TOKEN, AWS keys, CSI encryption passphrase, Talos backup S3 credentials.
+**Secret management**: SOPS+age encrypted `secrets/local.env.yaml`, loaded via `source scripts/env.sh`.
 
 **Upstream sync**: `scripts/upstream-sync.sh` tracks changes from the upstream Terraform module, generates patch files.
 
@@ -117,33 +135,28 @@ Runs `tofu init` → `tofu apply -auto-approve`. Environment: Production.
 
 ## Known Issues & Technical Debt
 
-### Critical
-- **Plaintext secrets in git**: `platform/dex-secrets.yaml`, `vault-secrets.yaml`, `oauth2-proxy-secrets.yaml` contain secrets. Grafana admin password hardcoded in helmfile.yaml.
-
 ### Architectural Gaps
 - Single control plane (no HA, no etcd quorum)
-- No GitOps for platform (manual helmfile apply)
 - No alerting (Prometheus without Alertmanager receivers)
 - No default-deny network policies (Cilium capable but unenforced)
 - WAF rule exclusions undocumented
+- ArgoCD Application manifests are not self-managed (applied manually via `kubectl apply`)
 
 ---
 
-## Roadmap (from TODO.md + evaluation)
+## Roadmap (from TODO.md)
 
 ### Tier 1 — Next Steps
-1. External Secrets Operator or Sealed Secrets (remove plaintext secrets from git)
-2. ArgoCD (GitOps for platform layer)
-3. Platform CD workflow (GitHub Actions for helmfile apply)
+1. ArgoCD App-of-Apps (self-manage Application manifests)
+2. Alertmanager with Discord/Slack receivers
+3. CiliumNetworkPolicy default-deny
 
 ### Tier 2 — Portfolio Additions
-4. Alertmanager with Discord/Slack receivers
-5. CiliumNetworkPolicy default-deny
-6. Scale to 3 CP nodes
-7. Log aggregation (Loki)
+4. Scale to 3 CP nodes
+5. Log aggregation (Loki)
+6. Renovate Bot for dependency updates
 
 ### Tier 3 — Polish
-8. Renovate Bot for dependency updates
-9. Pod Security Standards (Kyverno or PSS)
-10. Operational runbooks (DR recovery, node replacement, cert rotation)
-11. Architecture diagram and "Design Decisions" README section
+7. Pod Security Standards (Kyverno or PSS enforcement across all namespaces)
+8. Operational runbooks (DR recovery, node replacement, cert rotation)
+9. Architecture diagram and "Design Decisions" README section
