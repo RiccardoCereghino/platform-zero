@@ -1,99 +1,3 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: coraza-waf-config
-  namespace: security
-data:
-  Caddyfile: |
-    {
-      order coraza_waf first
-    }
-
-    (waf) {
-      coraza_waf {
-        directives `
-          Include /opt/coraza/config/coraza.conf
-          Include /opt/coraza/config/crs-setup.conf
-
-          # ── Method Enforcement (911100) ─────────────────────
-          # REST APIs use PUT, PATCH, DELETE which CRS blocks by
-          # default. Covers Vaultwarden cipher/folder/account
-          # CRUD and Grafana dashboard/annotation CRUD.
-          SecRule REQUEST_FILENAME "@beginsWith /api/" \
-              "id:1001,phase:1,pass,nolog,ctl:ruleRemoveById=911100"
-          # Vaultwarden OAuth token endpoint
-          SecRule REQUEST_FILENAME "@beginsWith /identity/" \
-              "id:1002,phase:1,pass,nolog,ctl:ruleRemoveById=911100"
-          # Vaultwarden WebSocket real-time sync
-          SecRule REQUEST_FILENAME "@beginsWith /notifications/" \
-              "id:1003,phase:1,pass,nolog,ctl:ruleRemoveById=911100"
-
-          # ── SQL Injection (942xxx) on /api/ ─────────────────
-          # Vaultwarden: base64-encoded cipher data in JSON
-          #   bodies matches SQLi patterns (=, +, --, or, and).
-          # Grafana: PromQL operators (=~, !=, {}, |) and
-          #   dashboard save payloads trigger SQLi heuristics.
-          SecRule REQUEST_FILENAME "@beginsWith /api/" \
-              "id:1010,phase:1,pass,nolog,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942110,ctl:ruleRemoveById=942120,ctl:ruleRemoveById=942130,ctl:ruleRemoveById=942150"
-          SecRule REQUEST_FILENAME "@beginsWith /api/" \
-              "id:1011,phase:1,pass,nolog,ctl:ruleRemoveById=942180,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=942200,ctl:ruleRemoveById=942210,ctl:ruleRemoveById=942260"
-          SecRule REQUEST_FILENAME "@beginsWith /api/" \
-              "id:1012,phase:1,pass,nolog,ctl:ruleRemoveById=942300,ctl:ruleRemoveById=942330,ctl:ruleRemoveById=942340,ctl:ruleRemoveById=942370,ctl:ruleRemoveById=942430,ctl:ruleRemoveById=942440"
-          # Vaultwarden /identity/ OAuth params (grant_type,
-          # client_id) trigger auth-bypass SQLi signatures
-          SecRule REQUEST_FILENAME "@beginsWith /identity/" \
-              "id:1013,phase:1,pass,nolog,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942180,ctl:ruleRemoveById=942260,ctl:ruleRemoveById=942340"
-
-          # ── XSS Detection (941xxx) ─────────────────────────
-          # Vaultwarden: encrypted vault items containing HTML/JS
-          #   trigger XSS signatures when base64 content is
-          #   inspected.
-          # Grafana: dashboard JSON with panel HTML descriptions
-          #   and annotation text.
-          SecRule REQUEST_FILENAME "@beginsWith /api/" \
-              "id:1020,phase:1,pass,nolog,ctl:ruleRemoveById=941100,ctl:ruleRemoveById=941110,ctl:ruleRemoveById=941120,ctl:ruleRemoveById=941130,ctl:ruleRemoveById=941140"
-          SecRule REQUEST_FILENAME "@beginsWith /api/" \
-              "id:1021,phase:1,pass,nolog,ctl:ruleRemoveById=941160,ctl:ruleRemoveById=941170,ctl:ruleRemoveById=941180,ctl:ruleRemoveById=941320"
-
-          # ── Remote Command Execution (932xxx) ──────────────
-          # Vaultwarden: base64 cipher content matches Unix
-          #   command patterns.
-          # Grafana: PromQL pipe (|) operator and function names
-          #   like rate(), sum() trigger RCE detection.
-          SecRule REQUEST_FILENAME "@beginsWith /api/" \
-              "id:1030,phase:1,pass,nolog,ctl:ruleRemoveById=932100,ctl:ruleRemoveById=932105,ctl:ruleRemoveById=932110,ctl:ruleRemoveById=932115,ctl:ruleRemoveById=932125,ctl:ruleRemoveById=932150"
-
-          # ── Body Parsing & Content Type ────────────────────
-          # Grafana: Elasticsearch proxy uses x-ndjson content
-          #   type that fails body parsing and content-type
-          #   validation.
-          SecRule REQUEST_FILENAME "@contains /api/datasources/proxy/" \
-              "id:1040,phase:1,pass,nolog,ctl:ruleRemoveById=200002,ctl:ruleRemoveById=920420"
-          # Vaultwarden: cipher attachment uploads (multipart)
-          SecRule REQUEST_FILENAME "@contains /api/ciphers/" \
-              "id:1041,phase:1,pass,nolog,ctl:ruleRemoveById=200002,ctl:ruleRemoveById=920420"
-          SecRule REQUEST_FILENAME "@contains /api/sends/" \
-              "id:1042,phase:1,pass,nolog,ctl:ruleRemoveById=200002,ctl:ruleRemoveById=920420"
-
-          Include /opt/coraza/owasp-crs/rules/*.conf
-          SecRuleEngine On
-          SecTmpDir /tmp/coraza
-        `
-      }
-    }
-
-    vault.cereghino.me:80 {
-      import waf
-      reverse_proxy vaultwarden.vault.svc.cluster.local:80 {
-        header_up X-Real-IP {remote_host}
-      }
-    }
-
-    grafana.cereghino.me:80 {
-      import waf
-      reverse_proxy kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80
-    }
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -110,6 +14,8 @@ spec:
     metadata:
       labels:
         app: coraza-waf
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
         - name: coraza-caddy
