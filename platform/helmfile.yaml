@@ -14,6 +14,10 @@ repositories:
     url: https://prometheus-community.github.io/helm-charts
   - name: argo
     url: https://argoproj.github.io/argo-helm
+  - name: backstage
+    url: https://backstage.github.io/charts
+  - name: crossplane-stable
+    url: https://charts.crossplane.io/stable
 
 releases:
   - name: external-dns
@@ -191,6 +195,32 @@ releases:
   - name: waf
     namespace: security
     chart: ./waf-chart
+
+  - name: backstage
+    namespace: backstage
+    chart: backstage/backstage
+    values:
+      - backstage:
+          image:
+            registry: ghcr.io
+            repository: backstage/backstage
+            tag: latest
+          appConfig:
+            app:
+              baseUrl: https://backstage.cereghino.me
+            backend:
+              baseUrl: https://backstage.cereghino.me
+              listen:
+                port: 7007
+              database:
+                client: better-sqlite3
+                connection: ":memory:"
+        postgresql:
+          enabled: false
+
+  - name: crossplane
+    namespace: crossplane-system
+    chart: crossplane-stable/crossplane
 
   - name: argocd
     namespace: argocd
