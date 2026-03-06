@@ -28,6 +28,8 @@ Infrastructure-as-Code repository managing a Kubernetes cluster on Hetzner Cloud
 - **Storage**: Hetzner CSI with LUKS encryption
 - **DNS**: external-dns with Cloudflare
 - **CI/CD**: GitHub Actions (CI + Infra CD), ArgoCD (Platform CD)
+- **Developer Portal**: Backstage at `backstage.cereghino.me`
+- **Infrastructure Control Plane**: Crossplane with providers for Kubernetes, Helm, AWS, and Hetzner Cloud
 
 ## Key Commands
 
@@ -60,8 +62,8 @@ yamllint -c .yamllint platform/
 
 ## ArgoCD Architecture
 
-- **8 ArgoCD Applications** in `platform/argocd-apps/`: dex, external-dns, kube-prometheus-stack, oauth2-proxy, platform-manifests, vaultwarden, velero, waf
-- **platform-manifests** Application: manages raw K8s manifests via kustomize (`platform/kustomization.yaml`), including HTTPRoutes, RBAC, namespace configs, and KSOPS-decrypted secrets
+- **10 ArgoCD Applications** in `platform/argocd-apps/`: backstage, crossplane, dex, external-dns, kube-prometheus-stack, oauth2-proxy, platform-manifests, vaultwarden, velero, waf
+- **platform-manifests** Application: manages raw K8s manifests via kustomize (`platform/kustomization.yaml`), including HTTPRoutes, RBAC, namespace configs, KSOPS-decrypted secrets, and Crossplane Provider resources
 - **Helm-based Applications**: each mirrors values from `helmfile.yaml` in an ArgoCD Application with `valuesObject`
 - **Self-heal + auto-prune**: all Applications have `automated.selfHeal: true` and `automated.prune: true`
 - **Private repo access**: SSH deploy key for `git@github.com:RiccardoCereghino/platform-zero.git`
@@ -78,3 +80,4 @@ yamllint -c .yamllint platform/
 - ArgoCD Application manifests (`platform/argocd-apps/`) are NOT self-managed — apply with `kubectl apply` when changed
 - Upstream Terraform module from `hcloud-k8s/terraform-hcloud-kubernetes` — use `scripts/upstream-sync.sh` to track drift
 - Namespaces requiring privileged PSA (monitoring, velero) have explicit namespace manifests in `platform/`
+- Crossplane Provider manifests live in `platform/crossplane-providers.yaml` (managed by platform-manifests); Crossplane core must sync first before providers become active
