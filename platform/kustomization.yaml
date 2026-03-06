@@ -18,3 +18,5 @@ resources:
   - vault-db.yaml
   - grafana-reference-grant.yaml
   - oauth2-proxy-allowed-emails.yaml
+  - backstage-route.yaml
+  - crossplane-providers.yaml
