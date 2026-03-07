@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://charts.longhorn.io
+    chart: longhorn
+    targetRevision: 1.10.2
+    helm:
+      valuesObject:
+        preUpgradeChecker:
+          upgradeVersionCheck: false
+        defaultSettings:
+          allowCollectingLonghornUsageMetrics: false
+          kubernetesClusterAutoscalerEnabled: false
+          upgradeChecker: false
+        networkPolicies:
+          enabled: true
+          type: k8s
+        persistence:
+          defaultClass: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
