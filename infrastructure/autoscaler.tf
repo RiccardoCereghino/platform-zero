@@ -1,3 +1,7 @@
+# REVIEW: Cluster Autoscaler is currently unused (no autoscaling node pools configured).
+# It is deeply tied to Terraform state (node configs, firewall, SSH keys, HCloud tokens)
+# and must remain in infrastructure if enabled. To activate, configure
+# cluster_autoscaler_nodepools in terraform.tfvars.
 locals {
   cluster_autoscaler_enabled          = length(local.cluster_autoscaler_nodepools) > 0
   cluster_autoscaler_hostname_pattern = "^${var.cluster_name}-(${join("|", distinct([for np in local.cluster_autoscaler_nodepools : np.name]))})-[0-9a-f]+$"

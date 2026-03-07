@@ -38,10 +38,9 @@ worker_nodepools = [
 ]
 
 # ──────────────────────────────────────────────────────────────
-# L7 Networking — Cilium Gateway API + Cert Manager
+# L7 Networking — Cilium Gateway API
 # ──────────────────────────────────────────────────────────────
 cilium_gateway_api_enabled  = true
-cert_manager_enabled        = true
 cilium_hubble_enabled       = true
 cilium_hubble_relay_enabled = true
 cilium_hubble_ui_enabled    = true

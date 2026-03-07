@@ -16,10 +16,10 @@ locals {
     local.hcloud_ccm_manifest != null ? [local.hcloud_ccm_manifest] : [],
     local.hcloud_csi_manifest != null ? [local.hcloud_csi_manifest] : [],
     local.talos_backup_manifest != null ? [local.talos_backup_manifest] : [],
-    local.longhorn_manifest != null ? [local.longhorn_manifest] : [],
+
     local.metrics_server_manifest != null ? [local.metrics_server_manifest] : [],
-    local.cert_manager_manifest != null ? [local.cert_manager_manifest] : [],
-    local.ingress_nginx_manifest != null ? [local.ingress_nginx_manifest] : [],
+
+
     local.cluster_autoscaler_manifest != null ? [local.cluster_autoscaler_manifest] : [],
     var.talos_extra_inline_manifests != null ? var.talos_extra_inline_manifests : [],
     local.rbac_manifest != null ? [local.rbac_manifest] : [],
@@ -124,14 +124,6 @@ locals {
 
   # Kubelet extra mounts
   talos_kubelet_extra_mounts = concat(
-    var.longhorn_enabled ? [
-      {
-        source      = "/var/lib/longhorn"
-        destination = "/var/lib/longhorn"
-        type        = "bind"
-        options     = ["bind", "rshared", "rw"]
-      }
-    ] : [],
     [
       for mount in var.talos_kubelet_extra_mounts : {
         source      = mount.source

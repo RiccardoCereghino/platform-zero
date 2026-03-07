@@ -18,8 +18,115 @@ repositories:
     url: https://backstage.github.io/charts
   - name: crossplane-stable
     url: https://charts.crossplane.io/stable
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: longhorn
+    url: https://charts.longhorn.io
 
 releases:
+  - name: cert-manager
+    namespace: cert-manager
+    chart: jetstack/cert-manager
+    version: v1.19.3
+    values:
+      - crds:
+          enabled: true
+        startupapicheck:
+          enabled: false
+        config:
+          enableGatewayAPI: true
+          featureGates:
+            ACMEHTTP01IngressPathTypeExact: true
+        replicaCount: 2
+        podDisruptionBudget:
+          enabled: true
+          maxUnavailable: 1
+        topologySpreadConstraints:
+          - topologyKey: kubernetes.io/hostname
+            maxSkew: 1
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: cert-manager
+                app.kubernetes.io/component: controller
+            matchLabelKeys:
+              - pod-template-hash
+          - topologyKey: topology.kubernetes.io/zone
+            maxSkew: 1
+            whenUnsatisfiable: ScheduleAnyway
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: cert-manager
+                app.kubernetes.io/component: controller
+            matchLabelKeys:
+              - pod-template-hash
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: ""
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            effect: NoSchedule
+            operator: Exists
+        webhook:
+          replicaCount: 2
+          podDisruptionBudget:
+            enabled: true
+            maxUnavailable: 1
+          topologySpreadConstraints:
+            - topologyKey: kubernetes.io/hostname
+              maxSkew: 1
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: cert-manager
+                  app.kubernetes.io/component: webhook
+              matchLabelKeys:
+                - pod-template-hash
+            - topologyKey: topology.kubernetes.io/zone
+              maxSkew: 1
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: cert-manager
+                  app.kubernetes.io/component: webhook
+              matchLabelKeys:
+                - pod-template-hash
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: ""
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+              operator: Exists
+        cainjector:
+          replicaCount: 2
+          podDisruptionBudget:
+            enabled: true
+            maxUnavailable: 1
+          topologySpreadConstraints:
+            - topologyKey: kubernetes.io/hostname
+              maxSkew: 1
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: cert-manager
+                  app.kubernetes.io/component: cainjector
+              matchLabelKeys:
+                - pod-template-hash
+            - topologyKey: topology.kubernetes.io/zone
+              maxSkew: 1
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: cert-manager
+                  app.kubernetes.io/component: cainjector
+              matchLabelKeys:
+                - pod-template-hash
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: ""
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+              operator: Exists
+
   - name: external-dns
     namespace: external-dns
     chart: external-dns/external-dns
@@ -217,6 +324,23 @@ releases:
                 connection: ":memory:"
         postgresql:
           enabled: false
+
+  - name: longhorn
+    namespace: longhorn-system
+    chart: longhorn/longhorn
+    version: 1.10.2
+    values:
+      - preUpgradeChecker:
+          upgradeVersionCheck: false
+        defaultSettings:
+          allowCollectingLonghornUsageMetrics: false
+          kubernetesClusterAutoscalerEnabled: false
+          upgradeChecker: false
+        networkPolicies:
+          enabled: true
+          type: k8s
+        persistence:
+          defaultClass: false
 
   - name: crossplane
     namespace: crossplane-system
