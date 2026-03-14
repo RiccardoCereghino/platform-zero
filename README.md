@@ -1,92 +1,137 @@
-# SRE Homelab Cluster
+# Platform Zero
 
-Welcome to my Kubernetes homelab. This repository contains the declarative infrastructure and platform configuration for a highly resilient, secure, and observable Kubernetes cluster running on Hetzner Cloud.
+A production-grade Kubernetes cluster on Hetzner Cloud, fully defined as code. Built with Talos Linux, Cilium, ArgoCD, and SOPS — no SSH, no manual kubectl, no plaintext secrets.
 
-Built with Site Reliability Engineering (SRE) principles in mind, this project goes beyond a simple deployment by incorporating immutable infrastructure, advanced layer 7 networking, automated encrypted backups, GitOps delivery, and identity-aware proxying.
+```mermaid
+graph TB
+    subgraph "Tier 1: Infrastructure Layer"
+        TF["OpenTofu<br/>(infrastructure/)"]
+        TF -->|"tofu apply"| HC["Hetzner Cloud<br/>Servers, Networks, Volumes"]
+        HC -->|"provisions"| TALOS["Talos Linux Cluster<br/>1 Control Plane + 2 Workers"]
+        TALOS -->|"embeds"| EMBED["Embedded Components<br/>Cilium CNI, Hetzner CCM/CSI,<br/>metrics-server"]
+    end
+
+    subgraph "Tier 2: Platform Layer"
+        GIT["Git Repository<br/>platform/"] -->|"GitOps pull<br/>(3-minute poll)"| ARGO["ArgoCD<br/>GitOps Controller"]
+        ARGO -->|"deploys"| PLAT["Platform Services<br/>cert-manager, external-dns,<br/>dex, oauth2-proxy,<br/>kube-prometheus-stack, velero"]
+    end
+
+    subgraph "Tier 3: Application Layer"
+        APPS["Application Manifests<br/>platform/argocd-apps/"] -->|"defines"| DEPLOYED["Deployed Applications<br/>vaultwarden, coraza-waf"]
+    end
+
+    TALOS -->|"hosts"| ARGO
+    ARGO -->|"deploys"| DEPLOYED
+```
 
 ## Architecture & Core Components
 
-### 1. Infrastructure (OpenTofu + Talos Linux)
-The underlying infrastructure is provisioned on Hetzner Cloud using OpenTofu. We use **Talos Linux** as the operating system — an immutable, specialized OS designed explicitly for Kubernetes.
-- **Node Topology**: 1 Control Plane, 2 Worker nodes (configured in `infrastructure/terraform.tfvars`).
-- **Storage**: Hetzner CSI with LUKS-encrypted volumes for stateful workloads; Longhorn for distributed block storage.
-- **State Management**: OpenTofu state is securely stored in a remote S3 backend.
-- **Custom Images**: Talos Linux snapshots built via Packer for both amd64 and arm64 architectures.
+### Infrastructure (OpenTofu + Talos Linux)
 
-### 2. Networking (Cilium + Gateway API)
-We bypass legacy `kube-proxy` and standard Ingress controllers in favor of a modern networking stack.
-- **Cilium CNI**: High-performance eBPF-based overlay networking with kube-proxy replacement.
-- **Gateway API**: Layer 7 traffic routing and TLS termination via HTTPRoutes (6 routes managing all external access).
+The underlying infrastructure is provisioned on Hetzner Cloud using OpenTofu. Talos Linux is the operating system — immutable, API-managed, no SSH.
+
+- **Node Topology**: 1 Control Plane, 2 Worker nodes (CPX22: 2 vCPU, 4GB RAM each).
+- **Storage**: Hetzner CSI with LUKS-encrypted volumes (`vault-storage`, `hcloud-volumes-encrypted`).
+- **State Management**: OpenTofu state stored in remote S3 backend on Hetzner Object Storage.
+- **Custom Images**: Talos Linux snapshots built via Packer for amd64 and arm64 architectures.
+
+### Networking (Cilium + Gateway API)
+
+- **Cilium CNI**: eBPF-based networking with full kube-proxy replacement.
+- **Gateway API**: Layer 7 traffic routing and TLS termination via HTTPRoutes.
 - **Pod-to-Pod Encryption**: Transparent WireGuard encryption for all intra-cluster traffic.
 - **ExternalDNS**: Automated DNS record creation on Cloudflare from Gateway API resources.
 - **cert-manager**: Automated Let's Encrypt TLS certificate provisioning with Gateway API integration.
 
-### 3. GitOps & Delivery (ArgoCD + KSOPS)
+### GitOps & Delivery (ArgoCD + KSOPS)
+
 Platform delivery uses a pull-based GitOps model. ArgoCD runs in-cluster and continuously reconciles the desired state from this repository.
-- **ArgoCD**: 13 Application resources manage all platform components with automated sync, self-heal, and pruning. Uses an App-of-Apps pattern — `platform-manifests` manages all other 12 Application manifests via kustomize.
+
+- **ArgoCD**: 9 active Application resources manage all platform components with automated sync, self-heal, and pruning. Uses an App-of-Apps pattern — `platform-manifests` manages all other Application manifests via kustomize.
 - **KSOPS**: Kustomize exec plugin for decrypting SOPS+age encrypted secrets at sync time — secrets are encrypted at rest in git.
 - **Helmfile**: Defines Helm release values (used by CI for linting/validation; ArgoCD Applications mirror the values for deployment).
 - **ArgoCD UI**: Exposed at `argocd.cereghino.me` with Dex SSO (GitHub OIDC).
 
-### 4. Security & Access
-Zero-trust and identity verification are built-in from the start.
-- **Dex & OAuth2-Proxy**: Implements Identity-Aware Proxying (IAP) via GitHub OIDC. Services like Hubble UI and ArgoCD are behind this authentication layer.
+### Security & Access
+
+- **Dex & OAuth2-Proxy**: Identity-Aware Proxying via GitHub OIDC. Services like Hubble UI and ArgoCD are behind this authentication layer.
 - **SOPS + age**: All Kubernetes secrets are encrypted in git and only decrypted in-cluster by KSOPS.
-- **Coraza WAF**: A Web Application Firewall (Caddy + Coraza with OWASP CRS) deployed to inspect and filter traffic to Vaultwarden and Grafana. **Deprecated** (see ADR-022) — the operational overhead of self-managing WAF rules outweighs the benefits; Cloudflare Proxy managed firewall is the recommended approach for new deployments.
-- **Kubeconfig Auth**: Kubectl access is secured via OIDC, dropping the need for static, long-lived cluster admin tokens.
+- **Coraza WAF**: Web Application Firewall (Caddy + Coraza with OWASP CRS) protecting Vaultwarden and Grafana. Deprecated (see [ADR-022](docs/adrs/022-waf-coraza.md)).
+- **OIDC kubeconfig**: kubectl access secured via Dex → GitHub OIDC, no static tokens.
+- **RBAC**: ClusterRoleBinding maps OIDC email claim to cluster-admin.
 
-### 5. Observability & Backups
-- **Monitoring**: `kube-prometheus-stack` handles metrics collection and dashboards.
-- **Network Visibility**: Cilium Hubble provides rich, graphical network flow observability.
-- **Disaster Recovery**:
-  - **Etcd**: Automated hourly backups to Hetzner S3, encrypted with `age`.
-  - **Workloads**: Velero handles Kubernetes manifest and persistent volume backups.
+### Observability & Backups
 
-### 6. Platform Services
+- **Monitoring**: `kube-prometheus-stack` (Prometheus + Grafana).
+- **Network Visibility**: Cilium Hubble with UI behind OAuth2-Proxy.
+- **Etcd Backups**: Automated hourly backups to Hetzner S3, encrypted with age.
+- **Workload Backups**: Velero for Kubernetes manifest and persistent volume backups.
+
+### Platform Services
+
 - **Vaultwarden**: Self-hosted password manager backed by CloudNativePG PostgreSQL (3 replicas).
-- **Backstage**: Developer portal for service catalog and documentation.
-- **Crossplane**: Infrastructure control plane with providers for Kubernetes, Helm, AWS, and Hetzner Cloud.
+
+## CI/CD
+
+| Pipeline | Trigger | Steps |
+|----------|---------|-------|
+| **CI** (PR + push) | `infrastructure/**` | `tofu fmt -check` → `tofu validate` → `tofu plan` |
+| **CI** (PR + push) | `platform/**` | `yamllint` → `helmfile lint` → `kubeconform` |
+| **Infra CD** (push to master) | `infrastructure/**` | `tofu apply -auto-approve` |
+| **Platform CD** | push to master | ArgoCD auto-sync (self-heal + prune) |
 
 ## Repository Structure
 
-- `infrastructure/`: OpenTofu modules and configurations to spin up the Hetzner servers, networking, and bootstrap the Talos cluster.
-- `infrastructure/packer/`: Packer image definitions for Talos Linux snapshots (amd64/arm64).
-- `platform/`: Helmfile definitions, ArgoCD Application manifests, kustomize overlays, and raw Kubernetes manifests for all platform services.
-- `platform/argocd-apps/`: ArgoCD Application resources (one per platform component, 13 total).
-- `platform/waf-chart/`: Custom Helm chart for the Coraza WAF (deprecated).
-- `scripts/`: Utility scripts (upstream module sync, SOPS environment loader).
-- `secrets/`: SOPS-encrypted local development environment secrets.
-- `.github/workflows/`: CI (lint, plan, validate) and Infrastructure CD (auto-apply on master).
-- `docs/adrs/`: Architecture Decision Records (ADRs) documenting key design decisions (30 ADRs covering infrastructure, networking, security, platform, and observability choices).
+```
+infrastructure/          OpenTofu configs for Hetzner Cloud + Talos bootstrap
+infrastructure/packer/   Packer image definitions (Talos Linux, amd64/arm64)
+infrastructure/templates Talos shell script templates
+platform/                Helmfile, kustomize, raw K8s manifests
+platform/argocd-apps/    ArgoCD Application manifests (13 total, 9 active)
+platform/waf-chart/      Custom Helm chart for Coraza WAF (deprecated)
+scripts/                 Utility scripts (upstream-sync, env loader)
+secrets/                 SOPS-encrypted local development secrets
+.github/workflows/       CI (lint, plan, validate) and Infra CD
+docs/adrs/               Architecture Decision Records (32 ADRs)
+docs/runbooks/           Operational runbooks
+docs/post-mortems/       Incident post-mortems
+docs/architecture.md     Full architecture diagrams (Mermaid)
+```
 
 ## Getting Started
 
-Deploying this cluster is a two-step process:
+### 1. Infrastructure
 
-1. **Infrastructure**:
-   ```bash
-   source scripts/env.sh                       # Load SOPS-encrypted secrets
-   cd infrastructure
-   tofu init
-   tofu apply
-   ```
-   *This provisions the VMs, networks, and bootstraps Talos Kubernetes. The `sops-age-key` Secret is created in the `argocd` namespace via a Talos inline manifest.*
+```bash
+source scripts/env.sh                              # Load SOPS-encrypted secrets
+cd infrastructure && tofu init && tofu apply        # Provision cluster
+```
 
-2. **Platform Layer** (bootstrap ArgoCD, then it takes over):
-   ```bash
-   cd platform
-   helmfile apply --selector name=argocd            # Install ArgoCD
-   kubectl apply -f argocd-apps/platform-manifests.yaml  # Bootstrap the root App-of-Apps
-   ```
-   *`platform-manifests` then reconciles all other ArgoCD Applications and platform services from git automatically. Subsequent changes are deployed by pushing to `master`.*
+This provisions servers, networks, and bootstraps Talos Kubernetes. The `sops-age-key` Secret is created in the `argocd` namespace via a Talos inline manifest.
+
+### 2. Platform (bootstrap ArgoCD, then it takes over)
+
+```bash
+cd platform
+helmfile apply --selector name=argocd               # Install ArgoCD
+kubectl apply -f argocd-apps/platform-manifests.yaml # Bootstrap App-of-Apps
+```
+
+`platform-manifests` then reconciles all other ArgoCD Applications from git automatically. Subsequent changes are deployed by pushing to `master`.
 
 ## Exposed Services
 
 | Service | Domain | Protection |
 |---------|--------|------------|
 | ArgoCD | argocd.cereghino.me | Dex SSO (GitHub OIDC) |
-| Backstage | backstage.cereghino.me | Direct |
 | Dex | dex.cereghino.me | Direct (OIDC issuer) |
 | Hubble UI | hubble.cereghino.me | OAuth2-Proxy (GitHub OIDC) |
-| Vaultwarden | vault.cereghino.me | Coraza WAF (deprecated) |
-| Grafana | grafana.cereghino.me | Coraza WAF (deprecated) |
+| Vaultwarden | vault.cereghino.me | Coraza WAF |
+| Grafana | grafana.cereghino.me | Coraza WAF |
+
+## Documentation
+
+- **[Architecture Diagrams](docs/architecture.md)** — Full Mermaid diagrams: three-tier architecture, GitOps flow, CI/CD sequences, dependency map, directory layout.
+- **[Architecture Decision Records](docs/adrs/)** — 32 ADRs covering every major design decision from cloud provider selection to VPN access strategy.
+- **[Operational Runbooks](docs/runbooks/)** — Cluster access, infrastructure deployment, ArgoCD operations, platform changes, secrets management.
+- **[Post-Mortems](docs/post-mortems/)** — Incident documentation with root cause analysis and action items.
