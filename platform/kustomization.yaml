@@ -8,7 +8,7 @@ generators:
 resources:
   - monitoring-namespace.yaml
   - velero-namespace.yaml
-  - longhorn-namespace.yaml
+  # - longhorn-namespace.yaml  # Disabled — see ADR-031
   - argocd-route.yaml
   - dex-route.yaml
   - hubble-route.yaml
@@ -19,18 +19,18 @@ resources:
   - vault-db.yaml
   - grafana-reference-grant.yaml
   - oauth2-proxy-allowed-emails.yaml
-  - backstage-namespace.yaml
-  - backstage-route.yaml
+  # - backstage-namespace.yaml  # Disabled — see ADR-031
+  # - backstage-route.yaml  # Disabled — see ADR-031
   # ArgoCD Application manifests (auto-managed by platform-manifests)
   # NOTE: platform-manifests.yaml is excluded to avoid circular self-management
-  - argocd-apps/backstage.yaml
+  # - argocd-apps/backstage.yaml  # Disabled — see ADR-031
   - argocd-apps/cert-manager.yaml
-  - argocd-apps/crossplane.yaml
-  - argocd-apps/crossplane-providers.yaml
+  # - argocd-apps/crossplane.yaml  # Disabled — see ADR-031
+  # - argocd-apps/crossplane-providers.yaml  # Disabled — see ADR-031
   - argocd-apps/dex.yaml
   - argocd-apps/external-dns.yaml
   - argocd-apps/kube-prometheus-stack.yaml
-  - argocd-apps/longhorn.yaml
+  # - argocd-apps/longhorn.yaml  # Disabled — see ADR-031
   - argocd-apps/oauth2-proxy.yaml
   - argocd-apps/vaultwarden.yaml
   - argocd-apps/velero.yaml

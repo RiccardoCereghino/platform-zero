@@ -30,4 +30,5 @@ Netbird provides the optimal equilibrium between operational ease, robust securi
 * **Positive:** Removes the Kubernetes and Talos APIs from the public internet, migrating the architecture to a "dark network" model and drastically reducing the attack surface.
 * **Positive:** Maintains compliance with the operator's open-source, non-SaaS, and CNCF-aligned philosophy.
 * **Negative:** Introduces the operational overhead of self-hosting and maintaining the Netbird control plane (Management, Signal, Relay, and STUN/TURN servers).
+* **Negative:** The Netbird control plane runs on the cluster it secures. If the cluster becomes fully unreachable before Netbird is operational (e.g., during initial deployment or a full cluster outage), the VPN cannot be used to recover access. The break-glass procedure is `tofu apply -target='hcloud_firewall.this[0]'` to temporarily re-add the operator's current IP to the Hetzner firewall (see Post-Mortem 001).
 * **Neutral:** Requires updating OpenTofu configurations to remove legacy public firewall rules and modifying operational runbooks to reflect the new VPN-first access requirement.

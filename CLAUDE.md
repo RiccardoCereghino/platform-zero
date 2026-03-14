@@ -71,8 +71,9 @@ source scripts/env.sh                          # Decrypt and load SOPS secrets i
 
 ## ArgoCD Architecture
 
-- **13 ArgoCD Applications** in `platform/argocd-apps/`: backstage, cert-manager, crossplane, crossplane-providers, dex, external-dns, kube-prometheus-stack, longhorn, oauth2-proxy, platform-manifests, vaultwarden, velero, waf
-- **platform-manifests** Application: App-of-Apps root — manages raw K8s manifests AND all other 12 ArgoCD Application manifests via kustomize (`platform/kustomization.yaml`). Includes HTTPRoutes, RBAC, namespace configs, KSOPS-decrypted secrets, CNPG database clusters, and Crossplane Provider resources. `platform-manifests.yaml` itself is excluded from kustomize to avoid circular self-management and must be applied manually.
+- **9 active ArgoCD Applications** in `platform/argocd-apps/`: cert-manager, dex, external-dns, kube-prometheus-stack, oauth2-proxy, platform-manifests, vaultwarden, velero, waf
+- **4 disabled Applications** (files retained, commented out in kustomization.yaml — see ADR-031): backstage, crossplane, crossplane-providers, longhorn
+- **platform-manifests** Application: App-of-Apps root — manages raw K8s manifests AND all other active ArgoCD Application manifests via kustomize (`platform/kustomization.yaml`). Includes HTTPRoutes, RBAC, namespace configs, KSOPS-decrypted secrets, and CNPG database clusters. `platform-manifests.yaml` itself is excluded from kustomize to avoid circular self-management and must be applied manually.
 - **Helm-based Applications**: each mirrors values from `helmfile.yaml` in an ArgoCD Application with `valuesObject`
 - **Self-heal + auto-prune**: all Applications have `automated.selfHeal: true` and `automated.prune: true`
 - **Private repo access**: SSH deploy key for `git@github.com:RiccardoCereghino/platform-zero.git`
