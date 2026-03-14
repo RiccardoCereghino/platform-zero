@@ -1,14 +1,14 @@
 # ADR-004: Upstream Module Clone and Sync Strategy
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The cluster infrastructure is built on the `hcloud-k8s/terraform-hcloud-kubernetes` community template — a comprehensive OpenTofu module for provisioning Talos Linux clusters on Hetzner Cloud. The question was how to consume this module: as an opaque dependency or as owned source code.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Remote Terraform registry module** — Clean dependency management, automatic version updates, but acts as a black box. Impossible to read, modify, or learn from the internals. Module inputs constrain what you can customize.
 - **Direct clone with manual git rebasing** — Full ownership, but merging upstream changes into a diverged codebase is error-prone and tedious.

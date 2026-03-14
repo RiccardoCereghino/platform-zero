@@ -1,14 +1,14 @@
 # ADR-016: Helmfile and ArgoCD Value Duplication
 
-**Status:** Accepted
 **Date:** 2026-03-03
-**Author:** Riccardo Cereghino
+**Status:** Accepted
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 After migrating to ArgoCD (ADR-015), Helm release values exist in two places: `platform/helmfile.yaml` (used by CI for linting and validation) and the corresponding ArgoCD Application manifests in `platform/argocd-apps/` (used by ArgoCD for actual deployment). When a Helm value changes, both files must be updated.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Drop helmfile entirely** — ArgoCD becomes the sole source of truth. CI validation would need to parse ArgoCD Application manifests and extract Helm values for linting, which is more complex.
 - **Generate ArgoCD Applications from helmfile** — Use a script or tool to auto-generate Application manifests from helmfile releases. Eliminates duplication but adds build-time complexity and a generated-file maintenance burden.

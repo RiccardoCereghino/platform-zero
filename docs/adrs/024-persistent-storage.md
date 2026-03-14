@@ -1,14 +1,14 @@
 # ADR-024: Persistent Storage Backend Selection
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Stateful workloads (Vaultwarden/PostgreSQL, Prometheus, Grafana) need persistent storage that survives pod restarts and rescheduling. The choice of storage backend affects reliability, performance, cost, and operational complexity.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Rook Ceph** — Distributed storage system providing block, file, and object storage. Extremely capable but resource-hungry: requires multiple OSDs, monitors, and managers. Too heavy for a 3-node cluster where the storage infrastructure would consume a significant portion of available resources.
 - **Longhorn** — Lightweight distributed block storage by Rancher/SUSE. Provides replicated volumes across nodes, snapshots, and ReadWriteMany (RWX) support. The upstream module includes it as an option. Attractive for its resilience, but requires more setup and configuration than was justified given the project timeline and immediate objectives. Deferred as a future "sidegrade" if RWX storage is specifically needed.

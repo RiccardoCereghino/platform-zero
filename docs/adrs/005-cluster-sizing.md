@@ -1,14 +1,14 @@
 # ADR-005: Initial Cluster Sizing
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The cluster needs enough compute to run the platform stack (Cilium, ArgoCD, Prometheus, etc.) while keeping costs minimal. This is a portfolio project, not a production workload, so cost efficiency matters more than peak capacity.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **HA setup: 3 Control Plane + 3 Workers** — True high availability with etcd quorum, but roughly 3x the cost for control plane nodes that would sit mostly idle.
 

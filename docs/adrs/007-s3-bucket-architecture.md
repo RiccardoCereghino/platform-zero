@@ -1,14 +1,14 @@
 # ADR-007: S3 Bucket Architecture and Multi-Region DR
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The cluster produces two categories of critical data that need durable storage: OpenTofu state and backup artifacts (etcd snapshots, Velero backups). A decision was needed on whether to consolidate into one bucket or separate them, and how to handle regional fault tolerance.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Single bucket for everything** — Simpler management, but a single regional failure could take out both state and backups simultaneously.
 - **Manual bucket creation via Hetzner UI** — Quick but not reproducible.

@@ -1,14 +1,14 @@
 # ADR-021: Dex Authorization Filtering Strategy
 
-**Status:** Implemented
 **Date:** 2026-03-03
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Dex federates authentication through GitHub, but by default any GitHub user can authenticate. Access needs to be restricted to authorized individuals only.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **GitHub Organization or Team filtering in Dex** — Dex supports restricting logins to members of specific GitHub Organizations or Teams via the `orgs` field in the GitHub connector config. However, this caused persistent "not in required orgs" errors during testing, likely due to OAuth scope issues or private org membership visibility.
 

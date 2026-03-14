@@ -1,8 +1,8 @@
 # ADR-023: Pod Security and Policy Enforcement
 
-**Status:** Evaluating
 **Date:** 2026-03-03
-**Author:** Riccardo Cereghino
+**Status:** Evaluating
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
@@ -17,13 +17,13 @@ The cluster currently uses **Kubernetes Pod Security Admission (PSA)** labels, i
 
 PSA provides basic namespace-level isolation (privileged, baseline, restricted) but has significant limitations: it cannot mutate resources, cannot enforce custom policies (like label requirements), and cannot verify image signatures.
 
-## Alternatives Evaluated
+### Alternatives Evaluated
 
 - **Native PSA (current)** — Zero overhead, built into Kubernetes, but limited to three fixed profiles with no customization or mutation capability.
 - **OPA / Gatekeeper** — Powerful policy engine using Rego language. Steep learning curve due to Rego's custom syntax. Strong community adoption.
 - **Kyverno** — Policy-as-Code engine using native Kubernetes YAML resources instead of a custom language. Supports validation, mutation (e.g., auto-injecting sidecars), and image signature verification via Cosign/Sigstore.
 
-## Leading Candidate
+## Decision
 
 Adopt **Kyverno** as the automated policy enforcement engine, keeping PSA labels as a baseline safety net underneath.
 

@@ -1,14 +1,16 @@
 # ADR-018: Local Secrets Workflow Migration
 
-**Status:** Implemented
 **Date:** 2026-03-03
+**Status:** Implemented
+**Author(s):** [Name]
+
 **Supersedes:** Previous approach using direnv + 1Password CLI
 
 ## Context
 
 Running `tofu plan/apply` and `helmfile` commands locally requires environment variables containing sensitive tokens (Hetzner API token, S3 credentials, SOPS age key). The original approach used `direnv` integrated with the 1Password CLI (`op read`) to inject tokens into the shell upon entering the project directory.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **direnv + 1Password CLI (`op read`)** — The original approach. Clean UX (tokens appear automatically when you `cd` into the directory), but depends on an active 1Password subscription. When the subscription ended, this approach became unavailable.
 - **Bitwarden CLI (`bw get password`) + Vaultwarden** — Since Vaultwarden was deployed in-cluster, the `bw` CLI could pull secrets from it. However, this creates a circular dependency: you need cluster access to get the credentials needed to manage the cluster.

@@ -1,14 +1,14 @@
 # ADR-020: Unified OIDC Architecture with Dex
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The cluster has multiple components that need human authentication: ArgoCD (deployment dashboard), Hubble UI (network visibility), Grafana (monitoring), and `kubectl` (terminal access). Without a unified identity layer, each component would need its own authentication mechanism — static passwords, long-lived tokens, or separate OAuth apps — creating a fragmented and insecure access model.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Keycloak** — Full-featured identity and access management platform. Enterprise-grade, but heavy: requires its own PostgreSQL database, consumes significant resources, and is complex to operate for a small cluster.
 - **Authentik** — Modern alternative to Keycloak with a cleaner UI. Still relatively heavy and requires its own database and Redis.

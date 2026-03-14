@@ -1,14 +1,14 @@
 # ADR-006: Terraform State Storage
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 OpenTofu state contains the full mapping between declared infrastructure and actual cloud resources. Losing it means losing the ability to manage infrastructure declaratively. Storing it on local disk is a disaster recovery risk.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Local disk** — Simple, but a single disk failure or laptop loss means the state is gone. Rebuilding requires importing every resource manually.
 

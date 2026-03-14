@@ -1,14 +1,14 @@
 # ADR-011: Layer 7 Ingress with Gateway API
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 HTTP/HTTPS traffic from the internet needs to be routed to the correct services inside the cluster, with TLS termination, host-based routing, and path matching.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Traefik** — Feature-rich, auto-discovery, good dashboard. Widely used in homelabs and K3s clusters.
 - **ingress-nginx** — The Kubernetes community default. Stable and well-documented but based on the older Ingress API. The upstream module shipped it by default.

@@ -1,14 +1,14 @@
 # ADR-010: Pod-to-Pod Encryption with WireGuard
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Pod-to-pod traffic within the cluster traverses the Hetzner private network. While this network is isolated, encrypting traffic at the pod level provides defense in depth.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **No encryption** — Relies entirely on network-level isolation. Acceptable for dev environments, but doesn't demonstrate production security practices.
 - **IPsec** — Mature protocol, supported by Cilium, but higher CPU overhead and more complex key management. Also incompatible with some Cilium features (e.g., netkit datapath mode).

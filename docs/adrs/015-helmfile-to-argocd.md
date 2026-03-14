@@ -1,14 +1,14 @@
 # ADR-015: Migration from Helmfile to ArgoCD
 
-**Status:** Implemented
 **Date:** 2026-03-03
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The initial platform deployment relied on `helmfile apply` executed from a local machine. This is a push-based workflow — changes only take effect when someone manually runs the command. There is no drift detection: if someone modifies a resource in-cluster via `kubectl`, the change persists silently until the next manual apply. Additionally, the upstream Terraform module was provisioning platform applications (cert-manager, Longhorn) via Talos inline manifests, creating an architectural dependency between infrastructure provisioning and application deployment.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Continuing with local `helmfile apply`** — Simple, no additional tooling, but fundamentally not GitOps. Drift goes undetected, deployments require operator presence, and there's no audit trail.
 - **CI-driven push-based `kubectl apply`** — Automates deployment but still push-based. Requires storing kubeconfig credentials in CI, which is a security concern.

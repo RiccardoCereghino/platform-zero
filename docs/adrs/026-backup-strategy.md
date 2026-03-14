@@ -1,14 +1,14 @@
 # ADR-026: Backup Strategy (etcd + Velero)
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Two categories of data need protection: the Kubernetes cluster state (stored in etcd) and application data (stored in Persistent Volumes). Losing etcd means losing all cluster configuration, workload definitions, and secrets. Losing PV data means losing application state (databases, uploaded files).
 
-## Decisions
+## Decision
 
 ### etcd Backups
 
@@ -27,6 +27,10 @@ Two categories of data need protection: the Kubernetes cluster state (stored in 
 **Mechanism:** Velero backs up Kubernetes manifests and uses the Kopia node agent for file-level Persistent Volume backups, streaming to the same Hetzner S3 bucket (prefix: `velero/`).
 
 **Why file-level instead of CSI snapshots:** Hetzner CSI snapshots are point-in-time volume copies that stay within Hetzner's infrastructure. File-level backups via Kopia stream data to S3 in a different region (ADR-007), providing geographic redundancy that CSI snapshots alone cannot.
+
+## Rationale
+
+Backup strategies were chosen based on native ecosystem support and geographic reliability, as detailed within the individual sub-decisions above.
 
 ## Consequences
 

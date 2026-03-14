@@ -1,14 +1,14 @@
 # ADR-001: Cloud Provider Selection
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The project needed a cloud provider to host Kubernetes nodes. The primary constraint was cost — this is a personal portfolio project with no revenue, so monthly spend needed to stay minimal while still demonstrating production-grade practices.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **AWS / GCP / Azure** — Industry standards with managed Kubernetes offerings (EKS, GKE, AKS), but significantly more expensive for raw compute. Managed K8s services also abstract away the operational layer this project exists to demonstrate.
 - **Aruba / Scaleway** — European alternatives with competitive pricing, but weaker Kubernetes ecosystem tooling and community integrations.

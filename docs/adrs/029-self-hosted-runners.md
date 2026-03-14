@@ -1,14 +1,14 @@
 # ADR-029: Self-Hosted GitHub Actions Runners
 
-**Status:** Superseded by ADR-019
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Superseded by ADR-019
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 GitHub Actions provides free CI minutes for public repositories using GitHub-hosted runners (`ubuntu-latest`). An alternative is deploying self-hosted runners inside the Kubernetes cluster using Actions Runner Controller (ARC), which spins up ephemeral worker pods on demand.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **GitHub-hosted runners (free tier)** — Zero operational overhead, sufficient for the project's CI workload.
 - **Actions Runner Controller (ARC)** — Self-hosted runners as ephemeral pods in the cluster. Provides more control over the runner environment and avoids GitHub's free tier limitations.

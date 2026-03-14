@@ -1,14 +1,14 @@
 # ADR-012: Load Balancer PROXY Protocol and IPv6 Trade-off
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The Hetzner Layer 4 Load Balancer sits in front of the Cilium Gateway (Envoy). By default, Envoy sees the load balancer's IP as the client source address, losing the real user IP. This breaks rate limiting, WAF rules, access logs, and any logic that depends on client identity.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Plain TCP passthrough** — Preserves simplicity but caused connection resets and loses client IP information entirely.
 

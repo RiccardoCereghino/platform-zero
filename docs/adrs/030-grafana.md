@@ -1,14 +1,14 @@
 # ADR-030: Grafana as Observability Frontend
 
-**Status:** Accepted
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Accepted
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The `kube-prometheus-stack` deploys Prometheus for metrics collection and Alertmanager for alert routing. A visualization frontend is needed to explore metrics, build dashboards, and provide operational visibility into the cluster.
 
-## Alternatives Considered
+### Alternatives Considered
 
 No full evaluation was conducted. Grafana is the de facto standard for Prometheus visualization and ships as part of the `kube-prometheus-stack` Helm chart. Other observability frontends (Datadog, New Relic, commercial alternatives) were briefly considered but dismissed due to cost — the project has no budget for SaaS observability tooling.
 

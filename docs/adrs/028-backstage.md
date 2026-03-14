@@ -1,14 +1,14 @@
 # ADR-028: Backstage as Internal Developer Portal
 
-**Status:** Accepted — not yet operational
 **Date:** 2026-03-06
-**Author:** Riccardo Cereghino
+**Status:** Accepted — not yet operational
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 As the platform matures toward supporting application workloads, developers will need a way to discover services, request new deployments, and navigate the platform without deep Kubernetes expertise. The cognitive load of managing infrastructure scaffolding, CI/CD pipelines, security policies, and Kubernetes manifests creates friction and slows down the "time to hello world."
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Port** — SaaS, low-code internal developer portal. Lower setup effort but introduces external dependency and recurring cost.
 - **Cortex / OpsLevel** — SaaS service catalogs with scoring and maturity tracking. Commercial products, not self-hosted.

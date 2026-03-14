@@ -1,14 +1,14 @@
 # ADR-008: Container Network Interface Selection
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Kubernetes requires a CNI plugin to provide pod-to-pod networking, network policy enforcement, and service load balancing.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Calico** — Mature, well-documented, supports network policies natively. Uses iptables or eBPF (newer versions). Strong community adoption.
 - **Flannel** — Simple overlay network, minimal configuration. No native network policy support — requires pairing with another tool.

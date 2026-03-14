@@ -1,14 +1,14 @@
 # ADR-003: Infrastructure as Code Tooling
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 All cloud infrastructure (VMs, networks, firewalls, load balancers, S3 buckets) needs to be provisioned declaratively and reproducibly.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Terraform** — Industry standard, massive ecosystem, but the BSL license change raised concerns about long-term openness.
 - **Raw CLI commands / Hetzner UI** — Fast for one-off tasks, but not reproducible, not versionable, and impossible to review in pull requests.

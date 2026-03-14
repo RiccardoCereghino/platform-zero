@@ -1,14 +1,14 @@
 # ADR-025: Self-Hosted Password Manager with Vaultwarden
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The project needed a self-hosted password manager to replace a 1Password subscription. This serves dual purposes: managing daily-use passwords and storing infrastructure secrets (including the SOPS age private key that unlocks all cluster secrets).
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Infisical** — Focused on infrastructure secrets management, not general password management. Doesn't cover the daily-use case.
 - **Bitwarden Secrets Manager** — SaaS offering, which contradicts the self-hosted goal.
@@ -17,7 +17,7 @@ The project needed a self-hosted password manager to replace a 1Password subscri
 
 Deploy **Vaultwarden**, a lightweight Rust reimplementation of the Bitwarden server API, backed by **PostgreSQL managed by the CloudNativePG (CNPG) operator**.
 
-## The Database Decision
+## Rationale
 
 This was the most contentious sub-decision. The safe recommendation was to use Vaultwarden's default **SQLite** database — simpler to deploy, no additional operator needed, and sufficient for a single-user instance. This was explicitly suggested as the prudent path for a weekend showcase.
 

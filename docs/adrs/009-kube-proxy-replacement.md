@@ -1,14 +1,14 @@
 # ADR-009: Kube-Proxy Replacement with Cilium eBPF
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Kubernetes traditionally uses kube-proxy to handle service routing via iptables rules. With Cilium selected as the CNI (ADR-008), the option exists to replace kube-proxy entirely with Cilium's eBPF-based implementation.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Standard iptables-based kube-proxy** — Works everywhere, well understood, but performance degrades as the number of services grows (O(n) iptables rules). Adds a separate component to manage alongside Cilium.
 

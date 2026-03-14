@@ -1,14 +1,14 @@
 # ADR-027: Crossplane as Infrastructure Control Plane
 
-**Status:** Accepted — not yet operational
 **Date:** 2026-03-06
-**Author:** Riccardo Cereghino
+**Status:** Accepted — not yet operational
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Provisioning external cloud infrastructure (load balancers, S3 buckets, managed databases) currently requires writing OpenTofu HCL and running it through the CI/CD pipeline. For a platform engineering vision where developers self-serve, this creates a bottleneck: developers must learn HCL, submit infrastructure PRs, and wait for the pipeline to run. There is also no continuous drift detection on infrastructure managed by OpenTofu — if a resource is modified manually, the drift persists until the next `tofu plan`.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **OpenTofu/Terraform via CI/CD (Atlantis-style)** — The current approach. Works well for operator-managed infrastructure but doesn't enable developer self-service through Kubernetes-native APIs.
 

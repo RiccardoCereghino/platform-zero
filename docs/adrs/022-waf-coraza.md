@@ -1,14 +1,14 @@
 # ADR-022: Web Application Firewall with Coraza
 
-**Status:** Deprecated — Cloudflare managed firewall recommended for future projects
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Deprecated — Cloudflare managed firewall recommended for future projects
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 Exposed endpoints (Vaultwarden, Grafana) are accessible from the public internet and need protection against Layer 7 attacks: SQL injection, XSS, path traversal, and other OWASP Top 10 threats. A Web Application Firewall was needed to inspect and filter HTTP traffic before it reaches the application.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Cloudflare Proxy (orange cloud)** — Cloudflare's managed WAF sits in front of the origin server, providing DDoS protection, bot management, and OWASP rules out of the box. However, enabling the proxy means all traffic flows through Cloudflare's infrastructure, breaking the zero-trust sovereignty model where the cluster controls its own security boundary. Evaluated as a philosophical concern at the time.
 - **ModSecurity** — The original open-source WAF, mature and well-documented, but tied to Apache/Nginx and showing its age.
@@ -30,7 +30,7 @@ Deployed **Coraza WAF** using the `ghcr.io/coreruleset/coraza-crs:caddy-alpine` 
 
 **Custom Helm chart:** Since no off-the-shelf Helm chart existed for this deployment pattern, a hand-authored chart was created at `platform/waf-chart/`.
 
-## Verdict
+## Rationale
 
 **Managing your own WAF is operationally too heavy if there's no compelling reason to avoid a managed alternative.**
 

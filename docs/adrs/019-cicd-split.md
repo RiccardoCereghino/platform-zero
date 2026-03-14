@@ -1,14 +1,14 @@
 # ADR-019: CI/CD Pipeline Split Between GitHub Actions and ArgoCD
 
-**Status:** Implemented
 **Date:** 2026-03-01
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 The cluster needs both continuous integration (validating changes before they land) and continuous delivery (applying changes to the cluster). These are fundamentally different concerns with different security requirements — CI needs to read and validate code, while CD needs write access to the cluster.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Jenkins** — Self-hosted, highly customizable, but heavy operational overhead and a dated UX.
 - **GitLab CI** — Tightly integrated CI/CD, but the project is on GitHub.

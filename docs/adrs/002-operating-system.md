@@ -1,14 +1,14 @@
 # ADR-002: Operating System and Kubernetes Distribution
 
-**Status:** Implemented
 **Date:** 2026-02-28
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 A Kubernetes cluster requires both a host operating system and a method of bootstrapping the Kubernetes components. The choice here has deep implications for security posture, operational overhead, and how much of the stack the operator controls.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **Ubuntu/Debian + kubeadm** — The traditional approach. Full SSH access, familiar package management, but requires ongoing OS patching, configuration drift is possible, and the attack surface is large.
 - **Ubuntu/Debian + K3s** — Lightweight Kubernetes distribution, easy to bootstrap, but still runs on a general-purpose OS with SSH and mutable filesystem. Also available via the hetzner-k3s CLI tool.

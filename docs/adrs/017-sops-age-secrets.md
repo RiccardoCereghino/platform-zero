@@ -1,14 +1,14 @@
 # ADR-017: Secret Management with SOPS + age
 
-**Status:** Implemented
 **Date:** 2026-03-03
-**Author:** Riccardo Cereghino
+**Status:** Implemented
+**Author(s):** Riccardo Cereghino
 
 ## Context
 
 A GitOps workflow requires all configuration to live in Git. Kubernetes Secrets contain sensitive credentials (API tokens, database passwords, OAuth client secrets) that cannot be stored in plaintext. A mechanism is needed to encrypt secrets at rest in the repository while allowing ArgoCD to decrypt them at sync time.
 
-## Alternatives Considered
+### Alternatives Considered
 
 - **External Secrets Operator (ESO) + Vaultwarden** — ESO could bridge to the self-hosted Vaultwarden instance via a headless Bitwarden CLI webhook. Architecturally elegant but requires a running operator pod and creates a runtime dependency on Vaultwarden being available.
 - **Bitnami Sealed Secrets** — Encrypts secrets with a cluster-specific certificate. Simple, but the certificate must be backed up carefully, and re-encrypting secrets requires access to the running controller.
