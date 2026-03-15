@@ -53,3 +53,6 @@
 # SOPS — decrypted secret backups (never commit these)
 platform/*-secrets.decrypted.yaml
 secrets/*.decrypted.yaml
+
+# Personal reference documents (not part of the project)
+docs/reference/

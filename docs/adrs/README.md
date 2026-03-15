@@ -68,7 +68,7 @@ This directory contains the Architecture Decision Records (ADRs) for Platform Ze
 | ADR | Title | Status |
 |-----|-------|--------|
 | [022](022-waf-coraza.md) | Web Application Firewall with Coraza | Deprecated |
-| [023](023-policy-enforcement.md) | Pod security and policy enforcement | Evaluating |
+| [023](023-policy-enforcement.md) | Pod security and policy enforcement | Proposed |
 
 ### Storage & Data
 
@@ -86,3 +86,14 @@ This directory contains the Architecture Decision Records (ADRs) for Platform Ze
 | [028](028-backstage.md) | Backstage as internal developer portal | Accepted |
 | [029](029-self-hosted-runners.md) | Self-hosted GitHub Actions runners | Superseded by ADR-019 |
 | [030](030-grafana.md) | Grafana as observability frontend | Accepted |
+
+### Operational Maturity
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| [031](031-disable-longhorn-backstage-crossplane.md) | Disable non-essential platform components | Implemented |
+| [032](032-netbird-access.md) | Secure cluster access via Netbird WireGuard VPN | Accepted |
+| [033](033-default-deny-network-policy.md) | Migration to default-deny network policy | Proposed |
+| [035](035-alerting-strategy.md) | Alerting strategy with Alertmanager and ntfy | Proposed |
+| [036](036-observability-frontend.md) | Observability frontend — evaluating Perses as Grafana replacement | Evaluating |
+| [037](037-edc-evaluation-deployment.md) | Evaluation deployment of Eclipse Dataspace Connector | Evaluating |
