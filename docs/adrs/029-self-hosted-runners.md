@@ -1,7 +1,7 @@
 # ADR-029: Self-Hosted GitHub Actions Runners
 
 **Date:** 2026-03-01
-**Status:** Superseded by ADR-019
+**Status:** Superseded by ADR-038
 **Author(s):** Riccardo Cereghino
 
 ## Context
